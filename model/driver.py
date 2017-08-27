@@ -68,7 +68,7 @@ class DefaultTerminalDriver:
         self.cursor_position = 0
         self.state = self._state_ground  # Start of the state machine.
         self.parameters = ""
-        self.unicode_buffer = bytes()
+        self.unicode_buffer = bytearray()
         # A copy of the last line received from the PTY.
         # This is used to redraw the current line and compute the cursor's position.
         self.last_line = ""
@@ -79,6 +79,13 @@ class DefaultTerminalDriver:
         c = ord(typed_char)
         if context.debug:
             write_str("%02X" % c)
+
+        # This non-canonical node takes priority if it's active, as
+        # any subsequent byte is part of the character being read.
+        if self.state == self._state_unicode_char:
+            self.state(c)
+            return
+
         # Anywhere node in the state machine.
         if c == 0x18 or c == 0x1A or 0x80 <= c <= 0x8F or 0x91 <= c <= 0x97 or c == 0x99 or c == 0x9A:
             # Execute
@@ -332,7 +339,7 @@ class DefaultTerminalDriver:
             raise RuntimeError("Not implemented (to handle here)! (Ground, 0x%02X)" % c)
         # Unicode character.
         elif 0xC2 <= c <= 0xF4:
-            self.unicode_buffer = bytes([c])
+            self.unicode_buffer = bytearray([c])
             self.state = self._state_unicode_char
         else:
             raise RuntimeError("Not implemented! (Ground, 0x%02X)" % c)
@@ -402,13 +409,17 @@ class DefaultTerminalDriver:
         considered authoritative parsing!
         :param c: The new byte received.
         """
-        self.unicode_buffer += bytes([c])
-        if 0xC2 <= self.unicode_buffer[0] <= 0xDF:  # Character is encoded on 2 bytes.
+        self.unicode_buffer.append(c)
+        # This test checks whether the buffer contains a 2, 3 or 4-byte unicode character
+        # ready to be printed. No need to check the length in case of 2, because we can only
+        # enter this state from Ground which initializes the buffer with 1 byte.
+        if (0xC2 <= self.unicode_buffer[0] <= 0xDF) or \
+           (0xE0 <= self.unicode_buffer[0] <= 0xEF and len(self.unicode_buffer) == 3) or \
+           (0xF0 <= self.unicode_buffer[0] <= 0xF4 and len(self.unicode_buffer) == 4):
             unicode_char = self.unicode_buffer.decode("UTF-8")
             self.append(unicode_char)
             self.print_character(unicode_char)
             self.state = self._state_ground
-        # TODO: characters encoded on 3 and 4 bytes.
 
     # -----------------------------------------------------------------------------
 
