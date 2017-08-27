@@ -16,6 +16,8 @@
 """
 
 # Source: http://www2.gar.no/glinkj/help/cmds/ansa.htm
+SC  = b"\x1B\x37"
+RC  = b"\x1B\x38"
 END = b"\x1B\x4F\x46"
 ICH = b"\x1B\x5B\x40"
 CPL = b"\x1B\x5B\x46"  # ^A?

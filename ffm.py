@@ -81,7 +81,7 @@ def main():
                         for c in read:
                             os.write(sys.stdout.fileno(), ("%02X " % ord(c)).encode("UTF-8"))
                     # Store the last line for possible future use
-                    context.terminal_driver.last_line = read.split(b"\x07")[-1]  # TODO: NOT PORTABLE?
+                    context.terminal_driver.last_line = read.split(b"\x07")[-1].decode("UTF-8")  # TODO: NOT PORTABLE?
                     os.write(sys.stdin.fileno(), read)
             except select.error as e:
                 if e[0] == 4:  # Interrupted system call. May be raised if SIGWINCH is received.

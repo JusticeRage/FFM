@@ -68,6 +68,7 @@ class DefaultTerminalDriver:
         self.cursor_position = 0
         self.state = self._state_ground  # Start of the state machine.
         self.parameters = ""
+        self.unicode_buffer = bytes()
         # A copy of the last line received from the PTY.
         # This is used to redraw the current line and compute the cursor's position.
         self.last_line = ""
@@ -98,8 +99,8 @@ class DefaultTerminalDriver:
             self.state = self._state_escape
             self._state_entry_clear()
         elif c == 0x01:  # TODO: REMOVE, special command used to debug stuff!
-            x, y = self._offset_to_caret_pos(self.cursor_position)
-            write_str("%d;%d" % (x, y))
+            self.input_buffer += "é"
+            self.print_character("é")
             pass
         else:
             self.state(c)
@@ -183,6 +184,21 @@ class DefaultTerminalDriver:
             self.pop(1)
             x, y = self._offset_to_caret_pos(self.cursor_position)
             self.relative_caret_move(x, y)
+
+    # -----------------------------------------------------------------------------
+
+    def print_character(self, c):
+        if self.cursor_position == 0:
+            write_str(c)
+            return
+
+        # Will the addition cause au new line to be created?
+        write_str(c + self.input_buffer[-self.cursor_position:])
+        if (len(self.last_line) + len(self.input_buffer)) % context.window_size[1] == 0:
+            write(b"\r\n")
+        x, y = self._offset_to_caret_pos(self.cursor_position)
+        self.relative_caret_move(x, y)
+        # TODO: accented chars?
 
     # -----------------------------------------------------------------------------
 
@@ -292,13 +308,7 @@ class DefaultTerminalDriver:
         # Printable character: add it to the buffer and display it.
         if 0x20 <= c < 0x7F:
             self.append(chr(c))
-            if self.cursor_position == 0:
-                write_str(chr(c))
-            else:  # If we're writing in the middle of the line, add the ICH control char to insert.
-                write(ansi.ICH)
-                write_str(chr(c))
-            # TODO: insert in a multiline buffer.
-            # TODO: accented chars?
+            self.print_character(chr(c))
         # ^L: clear screen
         elif c == 0x0C:
             write(ansi.CUP() + ansi.ED(2))  # Put the cursor at the top and delete all.
@@ -320,6 +330,10 @@ class DefaultTerminalDriver:
         elif 0 <= c <= 0x17 or c == 19 or 0x1C <= c <= 0x1F:
             # Execute
             raise RuntimeError("Not implemented (to handle here)! (Ground, 0x%02X)" % c)
+        # Unicode character.
+        elif 0xC2 <= c <= 0xF4:
+            self.unicode_buffer = bytes([c])
+            self.state = self._state_unicode_char
         else:
             raise RuntimeError("Not implemented! (Ground, 0x%02X)" % c)
 
@@ -378,6 +392,23 @@ class DefaultTerminalDriver:
         else:
             print(self.parameters)
             raise RuntimeError("Not implemented! (CSI Param, 0x%02X)" % c)
+
+    # -----------------------------------------------------------------------------
+
+    def _state_unicode_char(self, c):
+        """
+        This state handles Unicode characters. It is *not* represented in the state
+        machine diagram on which this code is based, and should therefore not be
+        considered authoritative parsing!
+        :param c: The new byte received.
+        """
+        self.unicode_buffer += bytes([c])
+        if 0xC2 <= self.unicode_buffer[0] <= 0xDF:  # Character is encoded on 2 bytes.
+            unicode_char = self.unicode_buffer.decode("UTF-8")
+            self.append(unicode_char)
+            self.print_character(unicode_char)
+            self.state = self._state_ground
+        # TODO: characters encoded on 3 and 4 bytes.
 
     # -----------------------------------------------------------------------------
 
