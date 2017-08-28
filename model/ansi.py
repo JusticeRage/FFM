@@ -15,12 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# Source: http://www2.gar.no/glinkj/help/cmds/ansa.htm
+# The SC/RC (save and restore cursor) work in an "absolute way", which means that
+# they can only be used when the caller is certain that no scrolling is going to
+# occur during the current operation.
 SC  = b"\x1B\x37"
 RC  = b"\x1B\x38"
+
 END = b"\x1B\x4F\x46"
 ICH = b"\x1B\x5B\x40"
-CPL = b"\x1B\x5B\x46"  # ^A?
+CPL = b"\x1B\x5B\x46"
 
 # The strings in this file are encoded in ASCII, as they're basically byte strings already.
 

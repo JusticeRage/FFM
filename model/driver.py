@@ -105,9 +105,8 @@ class DefaultTerminalDriver:
         elif c == 0x1B:
             self.state = self._state_escape
             self._state_entry_clear()
-        elif c == 0x01:  # TODO: REMOVE, special command used to debug stuff!
-            self.input_buffer += "é"
-            self.print_character("é")
+        elif c == 0x01:
+            self.go_to_sol()
             pass
         else:
             self.state(c)
@@ -163,7 +162,7 @@ class DefaultTerminalDriver:
         for instance through clear_line()
         """
         write_str(self.last_line + self.input_buffer)
-        x, y = self._offset_to_caret_pos(self.cursor_position)
+        x, y = self._end_to_offset(self.cursor_position)
         self.relative_caret_move(x, y)
 
     # -----------------------------------------------------------------------------
@@ -182,6 +181,7 @@ class DefaultTerminalDriver:
             self.pop(1)
         else:
             # Will the deletion cause the last line to be empty?
+            write(ansi.SC)  # Save the cursor position.
             if (len(self.last_line) - 1 + len(self.input_buffer)) % context.window_size[1] == 0:
                 write_str(self.input_buffer[-self.cursor_position:] + "\r\n")
                 write(ansi.DCH())
@@ -189,8 +189,7 @@ class DefaultTerminalDriver:
                 write_str(self.input_buffer[-self.cursor_position:])
                 write(ansi.DCH())
             self.pop(1)
-            x, y = self._offset_to_caret_pos(self.cursor_position)
-            self.relative_caret_move(x, y)
+            write(ansi.RC)  # Restore the cursor position.
 
     # -----------------------------------------------------------------------------
 
@@ -203,9 +202,8 @@ class DefaultTerminalDriver:
         write_str(c + self.input_buffer[-self.cursor_position:])
         if (len(self.last_line) + len(self.input_buffer)) % context.window_size[1] == 0:
             write(b"\r\n")
-        x, y = self._offset_to_caret_pos(self.cursor_position)
+        x, y = self._end_to_offset(self.cursor_position)
         self.relative_caret_move(x, y)
-        # TODO: accented chars?
 
     # -----------------------------------------------------------------------------
 
@@ -237,15 +235,38 @@ class DefaultTerminalDriver:
 
     # -----------------------------------------------------------------------------
 
+    def go_to_sol(self):
+        """
+        This function places the cursor and the caret on screen at the beginning of
+        the input buffer. This is the behavior traditionally associated with ^A in
+        terminals.
+        This function also increments the internal cursor to len(self.input_buffer).
+        """
+        if self.cursor_position == len(self.input_buffer):
+            return
+        # Just clear the line and rewrite it, remembering the caret's position at
+        # the beginning of the input buffer. This is safe to do as the line remains
+        # identical and will not wrap to new lines.
+        self.clear_line()
+        write_str(self.last_line)
+        write(ansi.SC)
+        write_str(self.input_buffer)
+        write(ansi.RC)
+        self.cursor_position = len(self.input_buffer)
+
+    # -----------------------------------------------------------------------------
+
     def go_to_eol(self):
         """
-        Moves the caret to the end of the buffer on the screen.
+        Moves the caret to the end of the buffer on the screen. It works by simply
+        redrawing the line, as the caret will be put at the end automatically.
         This function also puts the internal cursor to 0.
         """
         if self.cursor_position == 0:
             return
-        x, y = self._offset_to_caret_pos(self.cursor_position)
-        self.relative_caret_move(x, -y)
+        self.clear_line()
+        write_str(self.last_line)
+        write_str(self.input_buffer)
         self.cursor_position = 0
 
     # -----------------------------------------------------------------------------
@@ -282,7 +303,7 @@ class DefaultTerminalDriver:
 
     # -----------------------------------------------------------------------------
 
-    def _offset_to_caret_pos(self, offset):
+    def _end_to_offset(self, offset):
         """
         This function computes the number of lines and columns that separate the end
         of the input buffer to the given position in the input buffer on the screen.
@@ -322,11 +343,14 @@ class DefaultTerminalDriver:
             self.draw_current_line()
         # Carriage return: validate and send to the PTY.
         elif c == 0x0D:
+            # Place the cursor at EOL in order to avoid deleting part of the line with the output.
+            if self.cursor_position != 0:
+                self.go_to_eol()
+            write(b"\r\n")
             # TODO: check for commands
             os.write(context.active_session.master, self.input_buffer.encode('UTF-8') + b'\r')
             self.input_buffer = ""
             self.cursor_position = 0
-            write(b"\r\n")
         # END key:
         elif c == 0x46:
             self.cursor_position = 0
@@ -334,7 +358,7 @@ class DefaultTerminalDriver:
         # Backspace (^H)
         elif c == 0x7F:
             self.backspace()
-        elif 0 <= c <= 0x17 or c == 19 or 0x1C <= c <= 0x1F:
+        elif 0 <= c <= 0x17 or c == 0x19 or 0x1C <= c <= 0x1F:
             # Execute
             raise RuntimeError("Not implemented (to handle here)! (Ground, 0x%02X)" % c)
         # Unicode character.
@@ -359,8 +383,24 @@ class DefaultTerminalDriver:
         elif c == 0x5B:
             self.state = self._state_csi_entry
             self._state_entry_clear()
-        elif 0x30 <= c <= 0x4F or 0x51 <= c <= 0x57 or c == 0x5A or c == 0x5C or 0x60 <= c <= 0x7E:
+        elif 0x30 <= c <= 0x4E or 0x51 <= c <= 0x57 or c == 0x5A or c == 0x5C or 0x60 <= c <= 0x7E:
             self._esc_dispatch(c)
+            self.state = self._state_ground
+        # Not in the reference state machine. It however appears that recent keyboards map
+        # the END / HOME keys to 1B 4F XX.
+        elif c == 0x4F:
+            self.state = self._state_escape_intermediate
+        else:
+            raise RuntimeError("Not implemented! (Escape, 0x%02X)" % c)
+
+    # -----------------------------------------------------------------------------
+
+    def _state_escape_intermediate(self, c):
+        if c == 0x46:  # ESC O F - END key
+            self.go_to_eol()
+            self.state = self._state_ground
+        elif c == 0x48: # ESC O H - HOME key
+            self.go_to_sol()
             self.state = self._state_ground
         else:
             raise RuntimeError("Not implemented! (Escape, 0x%02X)" % c)

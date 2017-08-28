@@ -79,7 +79,7 @@ def main():
                     read = os.read(context.active_session.master, 2048)
                     if context.debug:
                         for c in read:
-                            os.write(sys.stdout.fileno(), ("%02X " % ord(c)).encode("UTF-8"))
+                            os.write(sys.stdout.fileno(), ("%02X " % c).encode("UTF-8"))
                     # Store the last line for possible future use
                     context.terminal_driver.last_line = read.split(b"\x07")[-1].decode("UTF-8")  # TODO: NOT PORTABLE?
                     os.write(sys.stdin.fileno(), read)
