@@ -105,7 +105,8 @@ class DefaultTerminalDriver:
         elif c == 0x1B:
             self.state = self._state_escape
             self._state_entry_clear()
-        elif c == 0x01:
+        elif c == 0xFF:
+            # TODO: TEST COMMAND, DELETE
             self.go_to_sol()
             pass
         else:
@@ -337,6 +338,18 @@ class DefaultTerminalDriver:
         if 0x20 <= c < 0x7F:
             self.append(chr(c))
             self.print_character(chr(c))
+        elif c == 0x01:
+            if self.cursor_position != len(self.input_buffer):
+                self.go_to_sol()
+        # ^E: go to the end of the line.
+        elif c == 0x05:
+            if self.cursor_position != 0:
+                self.go_to_eol()
+        # ^K: clear line starting from the cursor.
+        elif c == 0x0B and self.cursor_position > 0:
+            write(ansi.ED(0))
+            self.input_buffer = self.input_buffer[:-self.cursor_position]
+            self.cursor_position = 0
         # ^L: clear screen
         elif c == 0x0C:
             write(ansi.CUP() + ansi.ED(2))  # Put the cursor at the top and delete all.
@@ -351,6 +364,22 @@ class DefaultTerminalDriver:
             os.write(context.active_session.master, self.input_buffer.encode('UTF-8') + b'\r')
             self.input_buffer = ""
             self.cursor_position = 0
+        # ^U: clear line up to the cursor.
+        elif c == 0x15:
+            if self.cursor_position == 0:
+                self.clear_line()
+                self.input_buffer = ""
+                write_str(self.last_line)
+            elif self.cursor_position != len(self.input_buffer):
+                # Delete the whole line and rewrite the updated one, while keeping track
+                # of where the cursor should be placed.
+                self.clear_line()
+                self.input_buffer = self.input_buffer[-self.cursor_position:]
+                self.cursor_position = len(self.input_buffer)
+                write_str(self.last_line)
+                write(ansi.SC)
+                write_str(self.input_buffer)
+                write(ansi.RC)
         # END key:
         elif c == 0x46:
             self.cursor_position = 0

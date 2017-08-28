@@ -88,6 +88,12 @@ def main():
                     continue
                 else:
                     raise
+            # Pretty printing for unimplemented opcodes: no need for a full trace. Probably remove that in the future.
+            except RuntimeError as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                filename = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print("\r\n%s (%s, line %d)\r" % (str(e), filename, exc_tb.tb_lineno))
+                return
     finally:
         termios.tcsetattr(stdin_fd, termios.TCSADRAIN, old_settings)
         signal.signal(signal.SIGWINCH, old_handler)
