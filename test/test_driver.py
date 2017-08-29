@@ -79,29 +79,45 @@ class TestDriver(unittest.TestCase):
 
     # -----------------------------------------------------------------------------
 
-    def test_end_to_offset(self):
+    def test_backwards_move(self):
         # Simple, same-line cases
         self.driver.input_buffer = "A" * 10
-        x, y = self.driver._end_to_offset(0)
-        self.assertEqual([x, y], [0, 0])
-        x, y = self.driver._end_to_offset(10)
-        self.assertEqual([x, y], [0, -10])
-        x, y = self.driver._end_to_offset(200)
-        self.assertEqual([x, y], [0, -10])
+        self.assertEqual(self.driver._backwards_move(0), (0, 0))
+        self.assertEqual(self.driver._backwards_move(10), (0, -10))
+        self.assertEqual(self.driver._backwards_move(200), (0, -10))
+        self.assertEqual(self.driver._backwards_move(2, 5), (0, -2))
         # Multi-line cases
         self.driver.input_buffer = "A" * 160
-        x, y = self.driver._end_to_offset(80)
-        self.assertEqual([x, y], [1, 0])
-        x, y = self.driver._end_to_offset(90)
-        self.assertEqual([x, y], [1, -10])
-        x, y = self.driver._end_to_offset(97)
-        self.assertEqual([x, y], [1, -17])
-        x, y = self.driver._end_to_offset(98)
-        self.assertEqual([x, y], [2, 62])
-        x, y = self.driver._end_to_offset(159)
-        self.assertEqual([x, y], [2, 1])
-        x, y = self.driver._end_to_offset(160)
-        self.assertEqual([x, y], [2, 0])
+        self.assertEqual(self.driver._backwards_move(80), (1, 0))
+        self.assertEqual(self.driver._backwards_move(90), (1, -10))
+        self.assertEqual(self.driver._backwards_move(97), (1, -17))
+        self.assertEqual(self.driver._backwards_move(98), (2, 62))
+        self.assertEqual(self.driver._backwards_move(159), (2, 1))
+        self.assertEqual(self.driver._backwards_move(160), (2, 0))
+        # When not starting from the end of the buffer
+        self.assertEqual(self.driver._backwards_move(10, 100), (0, -10))
+        self.assertEqual(self.driver._backwards_move(1, 63), (1, 79))
+
+    # -----------------------------------------------------------------------------
+
+    def test_forward_move(self):
+        # Simple, same-line cases
+        self.driver.input_buffer = "A" * 10
+        self.driver.cursor_position = 3
+        self.assertEqual(self.driver._forward_move(0), (0, 0))
+        self.assertEqual(self.driver._forward_move(10, 0), (0, 10))
+        self.assertEqual(self.driver._forward_move(10, 7), (0, 3))
+        self.assertEqual(self.driver._forward_move(1), (0, 1))
+        self.assertEqual(self.driver._forward_move(3), (0, 3))
+        self.assertEqual(self.driver._forward_move(4), (0, 3))
+        self.assertEqual(self.driver._forward_move(200, 0), (0, 10))
+        # Multi-line cases
+        self.driver.input_buffer = "A" * 160
+        self.assertEqual(self.driver._forward_move(1, 63), (0, 1))
+        self.assertEqual(self.driver._forward_move(80, 63), (-1, 0))
+        self.assertEqual(self.driver._forward_move(1, 62), (-1, -79))
+        self.assertEqual(self.driver._forward_move(159, 1), (-2, -1))
+        self.assertEqual(self.driver._forward_move(200, 0), (-2, 0))
 
     # -----------------------------------------------------------------------------
 

@@ -168,7 +168,7 @@ class DefaultTerminalDriver:
         for instance through clear_line()
         """
         write_str(self.last_line + self.input_buffer)
-        x, y = self._end_to_offset(self.cursor_position)
+        x, y = self._backwards_move(self.cursor_position)
         self.relative_caret_move(x, y)
 
     # -----------------------------------------------------------------------------
@@ -208,7 +208,7 @@ class DefaultTerminalDriver:
         write_str(c + self.input_buffer[-self.cursor_position:])
         if (len(self.last_line) + len(self.input_buffer)) % context.window_size[1] == 0:
             write(b"\r\n")
-        x, y = self._end_to_offset(self.cursor_position)
+        x, y = self._backwards_move(self.cursor_position)
         self.relative_caret_move(x, y)
 
     # -----------------------------------------------------------------------------
@@ -309,27 +309,62 @@ class DefaultTerminalDriver:
 
     # -----------------------------------------------------------------------------
 
-    def _end_to_offset(self, offset):
+    def _backwards_move(self, move_length, start_offset=None):
         """
-        This function computes the number of lines and columns that separate the end
-        of the input buffer to the given position in the input buffer on the screen.
-        :param: offset An index into the input buffer. Typically self.cursor_position.
+        This function computes the number of lines and columns that separate two positions
+        in the input buffer on the screen.
+        :param: move_length By how many characters we want to go back.
+        :param: start_offset The index from which to start. Default is the cursor's position in the
+        buffer.
         :return: (lines, columns), the number of lines and columns from the current
         position to move to the right place.
         """
-        if offset > len(self.input_buffer):
-            offset = len(self.input_buffer)
+        if start_offset is None:
+            start_offset = len(self.input_buffer) - self.cursor_position
 
-        # Case 1: the end of the buffer and the caret are on the same line.
-        if ((len(self.input_buffer) + len(self.last_line)) // context.window_size[1] ==
-            (len(self.input_buffer) + len(self.last_line) - offset) // context.window_size[1]):
-            return 0, -offset
-        # Case 2: the end of the buffer and the caret are on different lines.
+        if move_length > start_offset:
+            move_length = start_offset
+
+        # Case 1: the start and the target are on the same line.
+        if ((start_offset + len(self.last_line)) // context.window_size[1] ==
+            (start_offset + len(self.last_line) - move_length) // context.window_size[1]):
+            return 0, -move_length
+        # Case 2: the start and the target are on different lines.
         else:
-            delta_lines = (len(self.last_line) + len(self.input_buffer)) // context.window_size[1] - \
-                          (len(self.last_line) + len(self.input_buffer) - offset) // context.window_size[1]
-            delta_columns = (len(self.last_line) + len(self.input_buffer) - offset) % context.window_size[1] - \
-                            (len(self.last_line) + len(self.input_buffer)) % context.window_size[1]
+            delta_lines = (len(self.last_line) + start_offset) // context.window_size[1] - \
+                          (len(self.last_line) + start_offset - move_length) // context.window_size[1]
+            delta_columns = (len(self.last_line) + start_offset - move_length) % context.window_size[1] - \
+                            (len(self.last_line) + start_offset) % context.window_size[1]
+            return delta_lines, delta_columns
+
+    # -----------------------------------------------------------------------------
+
+    def _forward_move(self, move_length, start_offset=None):
+        """
+        This function computes the number of lines and columns that separate two positions
+        in the input buffer on the screen.
+        :param: move_length By how many characters we want to go forward.
+        :param: start_offset The index from which to start. Default is the cursor's position in the
+        buffer.
+        :return: (lines, columns), the number of lines and columns from the current
+        position to move to the right place.
+        """
+        if start_offset is None:
+            start_offset = len(self.input_buffer) - self.cursor_position
+
+        if move_length > len(self.input_buffer) - start_offset:
+            move_length = len(self.input_buffer) - start_offset
+
+        # Case 1: the start and the target are on the same line.
+        if ((start_offset + len(self.last_line)) // context.window_size[1] ==
+                    (start_offset + len(self.last_line) + move_length) // context.window_size[1]):
+            return 0, move_length
+        # Case 2: the start and the target are on different lines.
+        else:
+            delta_lines = (len(self.last_line) + start_offset) // context.window_size[1] - \
+                          (len(self.last_line) + start_offset + move_length) // context.window_size[1]
+            delta_columns = (len(self.last_line) + start_offset + move_length) % context.window_size[1] - \
+                            (len(self.last_line) + start_offset) % context.window_size[1]
             return delta_lines, delta_columns
 
     # -----------------------------------------------------------------------------
