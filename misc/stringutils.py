@@ -15,9 +15,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-debug = False
 
-active_session = None
-sessions = []
-terminal_driver = None
-window_size = None
+def find_last_of(s, chars):
+    """
+    Finds the last instance of a char from the given group in a string.
+    :param s: The string to search.
+    :param chars: The group of characters to look for.
+    :return: The index of the character in the string, or -1.
+    """
+    for i in range(0, len(s)):
+        index = len(s) - i - 1
+        if s[len(s) - i - 1] in chars:
+            return index
+    return -1

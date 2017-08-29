@@ -1,5 +1,5 @@
 """
-    ffm.py by @JusticeRage
+    FFM by @JusticeRage
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,19 +29,19 @@ CPL = b"\x1B\x5B\x46"
 
 def CUU(x=1):
     # Cursor up
-    return ("\x1B\x5B%d\x41" % x).encode('ascii')
+    return ("\x1B\x5B%d\x41" % x).encode('ascii') if x > 1 else b"\x1B\x5B\x41"
 
 def CUD(x=1):
     # Cursor up
-    return ("\x1B\x5B%d\x42" % x).encode('ascii')
+    return ("\x1B\x5B%d\x42" % x).encode('ascii') if x > 1 else b"\x1B\x5B\x42"
 
 def CUF(x=1):
     # Cursor forward
-    return ("\x1B\x5B%d\x43" % x).encode('ascii')
+    return ("\x1B\x5B%d\x43" % x).encode('ascii') if x > 1 else b"\x1B\x5B\x43"
 
 def CUB(x=1):
     # Cursor back
-    return ("\x1B\x5B%d\x44" % x).encode('ascii')
+    return ("\x1B\x5B%d\x44" % x).encode('ascii') if x > 1 else b"\x1B\x5B\x44"
 
 def CUP(x=0, y=0):
     # Cursor to position
@@ -55,6 +55,5 @@ def ED(how):
     """
     Erase data mnemonic.
     :param how: 0: Cursor to end of display, 1: Top of display through cursor, 2: Top to bottom of display
-    :return:
     """
     return ("\x1B\x5B%d\x4A" % how).encode('ascii')

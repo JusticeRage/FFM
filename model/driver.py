@@ -1,5 +1,5 @@
 """
-    ffm.py by @JusticeRage
+    FFM by @JusticeRage
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,6 +24,11 @@ from commands.session_commands import create_session, cycle_session
 from commands.replacement_commands import alias_test
 import model.context as context
 
+# Global variable controlling the destination of the output.
+# This is used to redirect everything to a file or a string buffer for testing
+# and debugging purposes.
+OUTPUT_FILE = sys.stdout
+
 command_list = {
     "\x01c": create_session,
     "\x01\t": cycle_session,
@@ -40,15 +45,15 @@ def check_command(s):
 
 # -----------------------------------------------------------------------------
 
-def write(bytes):
+def write(b):
     """
     Shorthand function that prints data to stdout. Mainly here to make the code
     more readable, and provide a single place to redirect writes if needed.
 
-    :param bytes: The string to print.
+    :param b: The string to print.
     :return:
     """
-    os.write(sys.stdout.fileno(), bytes)
+    os.write(OUTPUT_FILE.fileno(), b)
 
 # -----------------------------------------------------------------------------
 
@@ -78,7 +83,7 @@ class DefaultTerminalDriver:
     def handle_input(self, typed_char):
         c = ord(typed_char)
         if context.debug:
-            write_str("%02X" % c)
+            write_str("%02X " % c)
 
         # This non-canonical node takes priority if it's active, as
         # any subsequent byte is part of the character being read.
@@ -105,16 +110,16 @@ class DefaultTerminalDriver:
         elif c == 0x1B:
             self.state = self._state_escape
             self._state_entry_clear()
-        elif c == 0xFF:
+        elif c == 0x01:
             # TODO: TEST COMMAND, DELETE
-            self.go_to_sol()
+            write_str("\x1BP3q q\x1B\x5C")
             pass
         else:
             self.state(c)
 
     # -----------------------------------------------------------------------------
 
-    def pop(self, amount):
+    def pop(self, amount=1):
         """
         Removes the last characters of the input buffer (based on the cursor).
         :param amount: The number of characters to remove.
@@ -312,9 +317,12 @@ class DefaultTerminalDriver:
         :return: (lines, columns), the number of lines and columns from the current
         position to move to the right place.
         """
+        if offset > len(self.input_buffer):
+            offset = len(self.input_buffer)
+
         # Case 1: the end of the buffer and the caret are on the same line.
         if ((len(self.input_buffer) + len(self.last_line)) // context.window_size[1] ==
-            (len(self.input_buffer) + len(self.last_line) - self.cursor_position) // context.window_size[1]):
+            (len(self.input_buffer) + len(self.last_line) - offset) // context.window_size[1]):
             return 0, -offset
         # Case 2: the end of the buffer and the caret are on different lines.
         else:
@@ -465,8 +473,11 @@ class DefaultTerminalDriver:
     def _state_csi_param(self, c):
         if 0x30 <= c <= 0x38 or c == 0x3B:
             self.parameters += chr(c)
+        elif c == 0x44:
+            # ^Left. Find the last non-[A-Za-z] char before the cursor.
+            re.s
         else:
-            print(self.parameters)
+            write_str("Parameters: " + self.parameters)
             raise RuntimeError("Not implemented! (CSI Param, 0x%02X)" % c)
 
     # -----------------------------------------------------------------------------

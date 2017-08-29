@@ -15,9 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-debug = False
+import unittest
+from misc.stringutils import find_last_of
 
-active_session = None
-sessions = []
-terminal_driver = None
-window_size = None
+
+class TestStringUtils(unittest.TestCase):
+    def test_find_last_of(self):
+        self.assertEqual(find_last_of("abcdef", "a"), 0)
+        self.assertEqual(find_last_of("abcdef", "b"), 1)
+        self.assertEqual(find_last_of("abcdef", "f"), 5)
+        self.assertEqual(find_last_of("abcdea", "a"), 5)
+        self.assertEqual(find_last_of("abcdef", "g"), -1)
+        self.assertEqual(find_last_of("", "a"), -1)
