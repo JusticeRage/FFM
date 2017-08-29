@@ -22,6 +22,7 @@ import sys
 import model.ansi as ansi
 from commands.session_commands import create_session, cycle_session
 from commands.replacement_commands import alias_test
+from misc.stringutils import *
 import model.context as context
 
 # Global variable controlling the destination of the output.
@@ -110,9 +111,9 @@ class DefaultTerminalDriver:
         elif c == 0x1B:
             self.state = self._state_escape
             self._state_entry_clear()
-        elif c == 0x01:
+        elif c == 0x02:
             # TODO: TEST COMMAND, DELETE
-            write_str("\x1BP3q q\x1B\x5C")
+            write(b"\t\t")
             pass
         else:
             self.state(c)
@@ -186,8 +187,8 @@ class DefaultTerminalDriver:
             write(ansi.DCH())
             self.pop(1)
         else:
-            # Will the deletion cause the last line to be empty?
             write(ansi.SC)  # Save the cursor position.
+            # Will the deletion cause the last line to be empty?
             if (len(self.last_line) - 1 + len(self.input_buffer)) % context.window_size[1] == 0:
                 write_str(self.input_buffer[-self.cursor_position:] + "\r\n")
                 write(ansi.DCH())
@@ -208,7 +209,7 @@ class DefaultTerminalDriver:
         write_str(c + self.input_buffer[-self.cursor_position:])
         if (len(self.last_line) + len(self.input_buffer)) % context.window_size[1] == 0:
             write(b"\r\n")
-        x, y = self._backwards_move(self.cursor_position)
+        x, y = self._backwards_move(self.cursor_position, len(self.input_buffer))
         self.relative_caret_move(x, y)
 
     # -----------------------------------------------------------------------------
@@ -221,7 +222,7 @@ class DefaultTerminalDriver:
         :return:
         """
         if self.cursor_position > 0:
-            if not self.cursor_at_eol():
+            if not self.caret_at_eol():
                 write(ansi.CUF())
             else:
                 write(ansi.CUD() + ansi.CUB(context.window_size[1]))
@@ -232,7 +233,7 @@ class DefaultTerminalDriver:
 
     def cursor_back(self, adjust_internal_cursor=True):
         if self.cursor_position + 1 <= len(self.input_buffer):
-            if not self.cursor_at_sol():
+            if not self.caret_at_sol():
                 write(ansi.CUB())
             else:
                 write(ansi.CUU() + ansi.CUF(context.window_size[1]))
@@ -250,14 +251,8 @@ class DefaultTerminalDriver:
         """
         if self.cursor_position == len(self.input_buffer):
             return
-        # Just clear the line and rewrite it, remembering the caret's position at
-        # the beginning of the input buffer. This is safe to do as the line remains
-        # identical and will not wrap to new lines.
-        self.clear_line()
-        write_str(self.last_line)
-        write(ansi.SC)
-        write_str(self.input_buffer)
-        write(ansi.RC)
+        x, y = self._backwards_move(len(self.input_buffer) - self.cursor_position)
+        self.relative_caret_move(x, y)
         self.cursor_position = len(self.input_buffer)
 
     # -----------------------------------------------------------------------------
@@ -270,9 +265,8 @@ class DefaultTerminalDriver:
         """
         if self.cursor_position == 0:
             return
-        self.clear_line()
-        write_str(self.last_line)
-        write_str(self.input_buffer)
+        x, y = self._forward_move(self.cursor_position)
+        self.relative_caret_move(x, y)
         self.cursor_position = 0
 
     # -----------------------------------------------------------------------------
@@ -298,13 +292,13 @@ class DefaultTerminalDriver:
 
     # -----------------------------------------------------------------------------
 
-    def cursor_at_eol(self):
+    def caret_at_eol(self):
         return (len(self.last_line) + len(self.input_buffer) - self.cursor_position) % context.window_size[1] \
                == context.window_size[1] - 1
 
     # -----------------------------------------------------------------------------
 
-    def cursor_at_sol(self):
+    def caret_at_sol(self):
         return (len(self.last_line) + len(self.input_buffer) - self.cursor_position) % context.window_size[1] == 0
 
     # -----------------------------------------------------------------------------
@@ -368,6 +362,60 @@ class DefaultTerminalDriver:
             return delta_lines, delta_columns
 
     # -----------------------------------------------------------------------------
+
+    def _backwards_word_move(self, word_characters=alphanum):
+        """
+        Moves the cursor backwards until the beginning of the current word (or the
+        next one, if we're not currently in a word).
+        :param word_characters: A list of characters that can be contained in a word.
+        """
+        # Skip any contiguous non-alphanum that may exist before the cursor.
+        while self.cursor_position + 1 <= len(self.input_buffer) and \
+                self.input_buffer[-self.cursor_position-1] not in word_characters:
+            self.cursor_back()
+
+        if self.cursor_position == len(self.input_buffer):
+            return
+
+        s = self.input_buffer[:-self.cursor_position] if self.cursor_position != 0 else self.input_buffer
+        index = find_last_not_of(s, word_characters) + 1  # + 1 because we want to place the cursor after that char.
+        if index == 0:  # No match found
+            self.go_to_sol()
+            self.cursor_position = len(self.input_buffer)
+        else:
+            offset = len(s) - index
+            x, y = self._backwards_move(offset)
+            self.relative_caret_move(x, y)
+            self.cursor_position += offset
+
+    # -----------------------------------------------------------------------------
+
+    def _forward_word_move(self, word_characters=alphanum):
+        """
+        Moves the cursor forward until after the current word (or the
+        next one, if we're not currently in a word).
+        :param word_characters: A list of characters that can be contained in a word.
+        """
+        # Skip any contiguous non-alphanum that may exist at the cursor.
+        while self.cursor_position != 0 and self.input_buffer[-self.cursor_position] not in word_characters:
+            self.cursor_forward()
+
+        if self.cursor_position == 0:  # Already at the end of the buffer.
+            return
+
+        s = self.input_buffer[-self.cursor_position:]
+        index = find_first_not_of(s, word_characters)
+        if index < 0:  # No match found
+            self.go_to_eol()
+            self.cursor_position = 0
+        elif index == 0:  # Should be impossible.
+            return
+        else:
+            x, y = self._forward_move(index)
+            self.relative_caret_move(x, y)
+            self.cursor_position -= index
+
+    # -----------------------------------------------------------------------------
     # VT500 state machine below.
     # -----------------------------------------------------------------------------
 
@@ -389,10 +437,11 @@ class DefaultTerminalDriver:
             if self.cursor_position != 0:
                 self.go_to_eol()
         # ^K: clear line starting from the cursor.
-        elif c == 0x0B and self.cursor_position > 0:
-            write(ansi.ED(0))
-            self.input_buffer = self.input_buffer[:-self.cursor_position]
-            self.cursor_position = 0
+        elif c == 0x0B:
+            if self.cursor_position > 0:
+                write(ansi.ED(0))
+                self.input_buffer = self.input_buffer[:-self.cursor_position]
+                self.cursor_position = 0
         # ^L: clear screen
         elif c == 0x0C:
             write(ansi.CUP() + ansi.ED(2))  # Put the cursor at the top and delete all.
@@ -423,10 +472,6 @@ class DefaultTerminalDriver:
                 write(ansi.SC)
                 write_str(self.input_buffer)
                 write(ansi.RC)
-        # END key:
-        elif c == 0x46:
-            self.cursor_position = 0
-            write(ansi.END)
         # Backspace (^H)
         elif c == 0x7F:
             self.backspace()
@@ -508,9 +553,14 @@ class DefaultTerminalDriver:
     def _state_csi_param(self, c):
         if 0x30 <= c <= 0x38 or c == 0x3B:
             self.parameters += chr(c)
+        # ^Right
+        elif c == 0x43:
+            self._forward_word_move()
+            self.state = self._state_ground
+        # ^Left
         elif c == 0x44:
-            # ^Left. Find the last non-[A-Za-z] char before the cursor.
-            re.s
+            self._backwards_word_move()
+            self.state = self._state_ground
         else:
             write_str("Parameters: " + self.parameters)
             raise RuntimeError("Not implemented! (CSI Param, 0x%02X)" % c)

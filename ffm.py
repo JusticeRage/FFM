@@ -84,7 +84,7 @@ def main():
                     context.terminal_driver.last_line = read.split(b"\x07")[-1].decode("UTF-8")  # TODO: NOT PORTABLE?
                     os.write(sys.stdin.fileno(), read)
             except select.error as e:
-                if e[0] == 4:  # Interrupted system call. May be raised if SIGWINCH is received.
+                if "[Errno 4]" in str(e):  # Interrupted system call. May be raised if SIGWINCH is received.
                     continue
                 else:
                     raise

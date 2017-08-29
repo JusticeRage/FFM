@@ -15,16 +15,65 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+# Not alphanum in the strictest sense. This list is used to figure out where the cursor
+# should jump to when the user presses ^Left or ^Right. There are probably characters
+# missing.
+alphanum = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZéèàùäïöüÿ"
+
+# -----------------------------------------------------------------------------
+
+def find_first_of(s, chars):
+    """
+    Finds the first instance of a char from a list in the given string.
+    :param s: The string into which the characters should be searched.
+    :param chars: The group of characters to look for.
+    :return: The index of the first matching character in the string, or -1.
+    """
+    for index, c in enumerate(s):
+        if c in chars:
+            return index
+    return -1
+
+# -----------------------------------------------------------------------------
+
+def find_first_not_of(s, chars):
+    """
+    Finds the first instance of a char not a given list in a string.
+    :param s: The string into which the characters should be searched.
+    :param chars: The group of characters to exclude.
+    :return: The index of the first character in the string but not in the list, or -1.
+    """
+    for index, c in enumerate(s):
+        if c not in chars:
+            return index
+    return -1
+
+# -----------------------------------------------------------------------------
 
 def find_last_of(s, chars):
     """
     Finds the last instance of a char from the given group in a string.
     :param s: The string to search.
     :param chars: The group of characters to look for.
-    :return: The index of the character in the string, or -1.
+    :return: The index of the last matching character in the string, or -1.
     """
     for i in range(0, len(s)):
         index = len(s) - i - 1
         if s[len(s) - i - 1] in chars:
+            return index
+    return -1
+
+# -----------------------------------------------------------------------------
+
+def find_last_not_of(s, chars):
+    """
+    Finds the last instance of a char in a string which is not in the given group.
+    :param s: The string to search.
+    :param chars: The group of characters to exclude.
+    :return: The index of the last matching character in the string, or -1.
+    """
+    for i in range(0, len(s)):
+        index = len(s) - i - 1
+        if s[len(s) - i - 1] not in chars:
             return index
     return -1

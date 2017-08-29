@@ -16,10 +16,21 @@
 """
 
 import unittest
-from misc.stringutils import find_last_of
+from misc.stringutils import *
 
 
 class TestStringUtils(unittest.TestCase):
+    def test_find_first_of(self):
+        self.assertEqual(find_first_of("abcdef", "a"), 0)
+        self.assertEqual(find_first_of("abcdef", "d"), 3)
+        self.assertEqual(find_first_of("Aaaaaa", "a"), 1)
+        self.assertEqual(find_first_of("abcdef", "z"), -1)
+
+    def test_find_first_not_of(self):
+        self.assertEqual(find_first_not_of("abcdef", "a"), 1)
+        self.assertEqual(find_first_not_of("aaaaab", "a"), 5)
+        self.assertEqual(find_first_not_of("aaaaaa", "a"), -1)
+
     def test_find_last_of(self):
         self.assertEqual(find_last_of("abcdef", "a"), 0)
         self.assertEqual(find_last_of("abcdef", "b"), 1)
@@ -27,3 +38,11 @@ class TestStringUtils(unittest.TestCase):
         self.assertEqual(find_last_of("abcdea", "a"), 5)
         self.assertEqual(find_last_of("abcdef", "g"), -1)
         self.assertEqual(find_last_of("", "a"), -1)
+
+    def test_find_last_not_of(self):
+        self.assertEqual(find_last_not_of("abcdef", alphanum), -1)
+        self.assertEqual(find_last_not_of("abcde/fé", alphanum), 5)
+        self.assertEqual(find_last_not_of("@abcdef", alphanum), 0)
+        self.assertEqual(find_last_not_of("@abcd-ef", alphanum), 5)
+        self.assertEqual(find_last_not_of("@abcd-ef", alphanum + "-"), 0)
+        self.assertEqual(find_last_not_of("", alphanum), -1)

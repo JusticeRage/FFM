@@ -121,6 +121,33 @@ class TestDriver(unittest.TestCase):
 
     # -----------------------------------------------------------------------------
 
+    def test_forward_word_move(self):
+        self.driver.input_buffer = "aaaaaa---aaaaaa-"
+        self.driver.go_to_sol()
+        self.driver._forward_word_move()
+        self.assertEqual(self.driver.cursor_position, 10)
+        self.driver._forward_word_move()
+        self.assertEqual(self.driver.cursor_position, 1)
+        self.driver._forward_word_move()
+        self.assertEqual(self.driver.cursor_position, 0)
+        self.driver._forward_word_move()
+        self.assertEqual(self.driver.cursor_position, 0)
+
+    # -----------------------------------------------------------------------------
+
+    def test_backward_word_move(self):
+        self.driver.input_buffer = "-aaaaaa---aaaaaa-"
+        self.driver._backwards_word_move()
+        self.assertEqual(self.driver.cursor_position, 7)
+        self.driver._backwards_word_move()
+        self.assertEqual(self.driver.cursor_position, 16)
+        self.driver._backwards_word_move()
+        self.assertEqual(self.driver.cursor_position, 17)
+        self.driver._backwards_word_move()
+        self.assertEqual(self.driver.cursor_position, 17)
+
+    # -----------------------------------------------------------------------------
+
     def _send_input(self, s):
         for c in s:
             self.driver.handle_input(c)
