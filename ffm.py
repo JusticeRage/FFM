@@ -17,8 +17,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import array
 import argparse
+import array
 import fcntl
 import os
 import select
@@ -28,8 +28,9 @@ import termios
 import tty
 
 import model.context as context
-from model.input_driver import DefaultInputDriver
+from model.driver.input import DefaultInputDriver
 from model.session import Session
+
 
 # -----------------------------------------------------------------------------
 

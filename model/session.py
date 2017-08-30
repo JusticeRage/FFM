@@ -20,7 +20,8 @@ import pty
 import subprocess
 import termios
 
-from model import input_driver, output_driver
+from model.driver import input, output
+
 
 class Session:
     def __init__(self):
@@ -32,8 +33,8 @@ class Session:
                                      stderr=self.slave,
                                      universal_newlines=True)
         self.disable_echo()
-        self.input_driver = input_driver.DefaultInputDriver()
-        self.output_driver = output_driver.DefaultOutputDriver()
+        self.input_driver = input.DefaultInputDriver()
+        self.output_driver = output.DefaultOutputDriver()
 
     # -----------------------------------------------------------------------------
 

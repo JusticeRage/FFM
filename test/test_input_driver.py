@@ -17,15 +17,16 @@
 
 import os
 import unittest
-import model.input_driver
+
 import model.context
+import model.driver.input
 
 OUTPUT_FILE_NAME = "test_output.bin"
 
 class TestDriver(unittest.TestCase):
     def setUp(self):
         model.context.stdout = open(OUTPUT_FILE_NAME, "wb")
-        self.driver = model.input_driver.DefaultInputDriver()
+        self.driver = model.driver.input.DefaultInputDriver()
         self.driver.last_line = "root@hostname:~# "  # len() = 17
         self.output = open(OUTPUT_FILE_NAME, "rb")
         model.context.window_size = [24, 80]
@@ -37,8 +38,8 @@ class TestDriver(unittest.TestCase):
             model.context.stdout.close()
         if self.output is not None:
             self.output.close()
-        if os.path.exists("test_output.bin"):
-            os.remove("test_output.bin")
+        if os.path.exists(OUTPUT_FILE_NAME):
+            os.remove(OUTPUT_FILE_NAME)
 
     # -----------------------------------------------------------------------------
 

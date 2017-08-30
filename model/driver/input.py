@@ -16,13 +16,12 @@
 """
 
 import os
-import re
 
 import model.ansi as ansi
-from model.base_driver import BaseDriver
-from commands.replacement_commands import alias_test
-from misc.stringutils import *
 import model.context as context
+from misc.stringutils import *
+from model.driver.base import BaseDriver
+
 
 # -----------------------------------------------------------------------------
 
@@ -75,8 +74,7 @@ class DefaultInputDriver(BaseDriver):
         # Anywhere node in the state machine.
         if c == 0x18 or c == 0x1A or 0x80 <= c <= 0x8F or 0x91 <= c <= 0x97 or c == 0x99 or c == 0x9A:
             # Execute
-            raise RuntimeError("Not implemented (to handle here)! (Anywhere, 0x%02X)" % c)
-            # self.state = self._state_ground
+            os.write(context.active_session.master, b"\x18")
         elif c == 0x90:
             raise RuntimeError("Not implemented! (Anywhere, 0x%02X)" % c)
         elif c == 0x9B:

@@ -17,9 +17,19 @@
 
 import os
 
-from model.base_driver import BaseDriver
-import model.context as context
+import model.context
+from model.driver.base import BaseDriver
 
-class DefaultOutputDriver(BaseDriver):
+
+class PassThroughDriver(BaseDriver):
+    """
+    Terminal driver which does nothing but forward whatever it receives.
+    """
+    def __init__(self, fd=None):
+        self.fd = fd if fd is not None else model.context.active_session.master
+
     def handle_input(self, typed_char):
-        os.write(context.stdout.fileno(), bytes([typed_char]))
+        if type(typed_char) == bytes:
+            os.write(self.fd, typed_char)
+        elif type(typed_char) == int:
+            os.write(self.fd, bytes([typed_char]))
