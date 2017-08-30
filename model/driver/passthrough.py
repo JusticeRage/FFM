@@ -21,9 +21,12 @@ import model.context
 from model.driver.base import BaseDriver
 
 
-class PassThroughDriver(BaseDriver):
+class PassthroughDriver(BaseDriver):
     """
     Terminal driver which does nothing but forward whatever it receives.
+    It replaces the input driver whenever an application requests the alternate screen (ex: nano).
+    This prevents any interpretation of the input which is forwarded to the app until the
+    alternate screen is exited.
     """
     def __init__(self, fd=None):
         self.fd = fd if fd is not None else model.context.active_session.master

@@ -20,7 +20,7 @@ import termios
 
 import model.context as context
 from model.driver.base import BaseDriver
-from model.driver.passthrough import PassThroughDriver
+from model.driver.passthrough import PassthroughDriver
 
 
 class DefaultOutputDriver(BaseDriver):
@@ -67,7 +67,7 @@ class DefaultOutputDriver(BaseDriver):
             # DECSET. A program is trying to switch to the alternate screen.
             # Switch the driver to passthrough mode.
             self._saved_driver = context.active_session.input_driver
-            context.active_session.input_driver = PassThroughDriver()
+            context.active_session.input_driver = PassthroughDriver()
             #context.active_session.input_driver.handle_bytes(("\x1B\x5B\x3F%s\x68" % self._parameters).encode('ascii'))
             self._state = None
         elif c == 0x6C and (self._parameters == "1049"):

@@ -178,6 +178,30 @@ class DefaultInputDriver(BaseDriver):
 
     # -----------------------------------------------------------------------------
 
+    def delete_word(self):
+        """
+        Handles the ^W character.
+        :return:
+        """
+        if self.cursor_position == len(self.input_buffer):
+            return
+        while self.cursor_position - 1 < len(self.input_buffer) and self.input_buffer[-self.cursor_position - 1] == " ":
+            self.backspace()
+
+        s = self.input_buffer if self.cursor_position == 0 else self.input_buffer[:-self.cursor_position]
+        if not s:
+            return
+
+        chars_to_delete = find_last_of(s, " ")
+        if chars_to_delete == -1:
+            chars_to_delete = len(s)  # Delete up to the start of the line then.
+        else:
+            chars_to_delete = len(s) - chars_to_delete - 1
+        for _ in range(0, chars_to_delete):
+            self.backspace()
+
+# -----------------------------------------------------------------------------
+
     def print_character(self, c):
         if self.cursor_position == 0:
             write_str(c)
@@ -450,6 +474,9 @@ class DefaultInputDriver(BaseDriver):
                 write(ansi.SC)
                 write_str(self.input_buffer)
                 write(ansi.RC)
+        # ^W: delete the current word.
+        elif c == 0x17:
+            self.delete_word()
         # Backspace (^H)
         elif c == 0x7F:
             self.backspace()
