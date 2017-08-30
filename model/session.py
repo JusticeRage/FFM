@@ -20,6 +20,8 @@ import pty
 import subprocess
 import termios
 
+from model import input_driver, output_driver
+
 class Session:
     def __init__(self):
         self.master, self.slave = pty.openpty()
@@ -30,6 +32,8 @@ class Session:
                                      stderr=self.slave,
                                      universal_newlines=True)
         self.disable_echo()
+        self.input_driver = input_driver.DefaultInputDriver()
+        self.output_driver = output_driver.DefaultOutputDriver()
 
     # -----------------------------------------------------------------------------
 
@@ -52,7 +56,3 @@ class Session:
         flags = termios.tcgetattr(self.master)
         flags[3] &= ~termios.ECHO
         termios.tcsetattr(self.master, termios.TCSANOW, flags)
-
-    def get_echo(self):
-        flags = termios.tcgetattr(self.master)
-        return flags[3] & termios.ECHO

@@ -17,15 +17,15 @@
 
 import os
 import unittest
-import model.driver
+import model.input_driver
 import model.context
 
 OUTPUT_FILE_NAME = "test_output.bin"
 
 class TestDriver(unittest.TestCase):
     def setUp(self):
-        model.driver.OUTPUT_FILE = open(OUTPUT_FILE_NAME, "wb")
-        self.driver = model.driver.DefaultTerminalDriver()
+        model.context.stdout = open(OUTPUT_FILE_NAME, "wb")
+        self.driver = model.input_driver.DefaultInputDriver()
         self.driver.last_line = "root@hostname:~# "  # len() = 17
         self.output = open(OUTPUT_FILE_NAME, "rb")
         model.context.window_size = [24, 80]
@@ -33,8 +33,8 @@ class TestDriver(unittest.TestCase):
     # -----------------------------------------------------------------------------
 
     def tearDown(self):
-        if model.driver.OUTPUT_FILE is not None:
-            model.driver.OUTPUT_FILE.close()
+        if model.context.stdout is not None:
+            model.context.stdout.close()
         if self.output is not None:
             self.output.close()
         if os.path.exists("test_output.bin"):

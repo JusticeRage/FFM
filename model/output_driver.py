@@ -15,13 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys
+import os
 
-debug_input = False
-debug_output = False
-stdout = None
-stdin = sys.stdin
+from model.base_driver import BaseDriver
+import model.context as context
 
-active_session = None
-sessions = []
-window_size = None
+class DefaultOutputDriver(BaseDriver):
+    def handle_input(self, typed_char):
+        os.write(context.stdout.fileno(), bytes([typed_char]))

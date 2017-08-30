@@ -15,13 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys
+import abc
 
-debug_input = False
-debug_output = False
-stdout = None
-stdin = sys.stdin
+class BaseDriver(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def handle_input(self, typed_char):
+        pass
 
-active_session = None
-sessions = []
-window_size = None
+    def handle_bytes(self, b):
+        for byte in b:
+            self.handle_input(byte)

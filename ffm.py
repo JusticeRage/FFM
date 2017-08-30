@@ -28,7 +28,7 @@ import termios
 import tty
 
 import model.context as context
-from model.driver import DefaultTerminalDriver
+from model.input_driver import DefaultInputDriver
 from model.session import Session
 
 # -----------------------------------------------------------------------------
@@ -53,15 +53,19 @@ def update_window_size(signum=None, frame=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Stealthy log file cleaner.")
-    parser.add_argument("--debug", action="store_true", help="The username to remove from the connexion logs.")
+    parser.add_argument("--debug-input", action="store_true", help="Toggle debugging of the user input.")
+    parser.add_argument("--debug-output", action="store_true", help="Toggle debugging of the terminal output.")
+    parser.add_argument("--stdout", help="Redirect stdout to the target file.")
     args = parser.parse_args()
-    context.debug = args.debug
+    context.debug_input = args.debug_input
+    context.debug_output = args.debug_output
+    context.stdout = open(args.stdout, "wb") if args.stdout is not None else sys.stdout
 
-    context.terminal_driver = DefaultTerminalDriver()
+    context.terminal_driver = DefaultInputDriver()
     stdin_fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(stdin_fd)
     old_handler = signal.signal(signal.SIGWINCH, update_window_size)
-    tty.setraw(sys.stdin)
+    tty.setraw(context.stdin)
 
     context.active_session = Session()
     context.sessions.append(context.active_session)
@@ -74,15 +78,16 @@ def main():
                 r, w, e = select.select([sys.stdin, context.active_session.master], [], [])
                 if sys.stdin in r:
                     typed_char = os.read(sys.stdin.fileno(), 1)
-                    context.terminal_driver.handle_input(typed_char)
+                    context.active_session.input_driver.handle_input(typed_char)
                 elif context.active_session.master in r:
                     read = os.read(context.active_session.master, 2048)
-                    if context.debug:
+                    if context.debug_output:
                         for c in read:
                             os.write(sys.stdout.fileno(), ("%02X " % c).encode("UTF-8"))
-                    # Store the last line for possible future use
-                    context.terminal_driver.last_line = read.split(b"\x07")[-1].decode("UTF-8")  # TODO: NOT PORTABLE?
-                    os.write(sys.stdin.fileno(), read)
+                    # Store the last line for future use # TODO: NOT PORTABLE?
+                    context.active_session.input_driver.last_line = read.split(b"\x07")[-1].decode("UTF-8")
+                    # Pass the output to the output driver for display.
+                    context.active_session.output_driver.handle_bytes(read)
             except select.error as e:
                 if "[Errno 4]" in str(e):  # Interrupted system call. May be raised if SIGWINCH is received.
                     continue

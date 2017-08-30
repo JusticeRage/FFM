@@ -17,32 +17,12 @@
 
 import os
 import re
-import sys
 
 import model.ansi as ansi
-from commands.session_commands import create_session, cycle_session
+from model.base_driver import BaseDriver
 from commands.replacement_commands import alias_test
 from misc.stringutils import *
 import model.context as context
-
-# Global variable controlling the destination of the output.
-# This is used to redirect everything to a file or a string buffer for testing
-# and debugging purposes.
-OUTPUT_FILE = sys.stdout
-
-command_list = {
-    "\x01c": create_session,
-    "\x01\t": cycle_session,
-    "^wopwop\r$": alias_test,
-}
-
-# -----------------------------------------------------------------------------
-
-def check_command(s):
-    for c in command_list:
-        if re.search(c, s):
-            return command_list[c]
-    return None
 
 # -----------------------------------------------------------------------------
 
@@ -51,10 +31,10 @@ def write(b):
     Shorthand function that prints data to stdout. Mainly here to make the code
     more readable, and provide a single place to redirect writes if needed.
 
-    :param b: The string to print.
+    :param b: The byte to print.
     :return:
     """
-    os.write(OUTPUT_FILE.fileno(), b)
+    os.write(context.stdout.fileno(), b)
 
 # -----------------------------------------------------------------------------
 
@@ -63,7 +43,7 @@ def write_str(s):
 
 # -----------------------------------------------------------------------------
 
-class DefaultTerminalDriver:
+class DefaultInputDriver(BaseDriver):
     """
     A partial implementation of a terminal emulator.
     It is based on the state machine located at http://vt100.net/emu/vt500_parser.png.
@@ -83,7 +63,7 @@ class DefaultTerminalDriver:
 
     def handle_input(self, typed_char):
         c = ord(typed_char)
-        if context.debug:
+        if context.debug_input:
             write_str("%02X " % c)
 
         # This non-canonical node takes priority if it's active, as
