@@ -77,3 +77,20 @@ def find_last_not_of(s, chars):
         if s[len(s) - i - 1] not in chars:
             return index
     return -1
+
+# -----------------------------------------------------------------------------
+
+def get_last_word(s, boundary=' '):
+    """
+    Returns the last word contained in a string.
+    :param s: The string whose last word we want.
+    :param boundary: The characters which delimit word boundaries.
+    :return:
+    """
+    # TODO: check if we're in an escaped sequence (open quotes)
+    if not s:
+        return ""
+    if s[-1] in boundary:
+        return ""
+    index = find_last_of(s, boundary)
+    return s[index:].lstrip()

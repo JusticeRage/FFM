@@ -16,7 +16,6 @@
 """
 
 import os
-import termios
 
 import model.context as context
 from model.driver.base import BaseDriver

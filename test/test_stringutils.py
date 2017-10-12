@@ -46,3 +46,8 @@ class TestStringUtils(unittest.TestCase):
         self.assertEqual(find_last_not_of("@abcd-ef", alphanum), 5)
         self.assertEqual(find_last_not_of("@abcd-ef", alphanum + "-"), 0)
         self.assertEqual(find_last_not_of("", alphanum), -1)
+
+    def test_get_last_word(self):
+        self.assertEqual(get_last_word("one two three"), "three")
+        self.assertEqual(get_last_word("one two three "), "")
+        self.assertEqual(get_last_word(""), "")

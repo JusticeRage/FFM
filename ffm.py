@@ -53,7 +53,7 @@ def update_window_size(signum=None, frame=None):
 # -----------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Stealthy log file cleaner.")
+    parser = argparse.ArgumentParser(description="Freedom Fighting Mode.")
     parser.add_argument("--debug-input", action="store_true", help="Toggle debugging of the user input.")
     parser.add_argument("--debug-output", action="store_true", help="Toggle debugging of the terminal output.")
     parser.add_argument("--stdout", help="Redirect stdout to the target file.")

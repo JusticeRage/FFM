@@ -20,6 +20,7 @@ import os
 import model.ansi as ansi
 import model.context as context
 from misc.stringutils import *
+from misc.tab_completion import complete
 from model.driver.base import BaseDriver
 
 
@@ -200,7 +201,7 @@ class DefaultInputDriver(BaseDriver):
         for _ in range(0, chars_to_delete):
             self.backspace()
 
-# -----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
 
     def print_character(self, c):
         if self.cursor_position == 0:
@@ -418,6 +419,17 @@ class DefaultInputDriver(BaseDriver):
             self.cursor_position -= index
 
     # -----------------------------------------------------------------------------
+
+    def read_all_output(self):
+        output = b""
+        end_marker = self.last_line.encode("UTF-8")
+        while not output.endswith(end_marker):
+            output += os.read(context.active_session.master, 4096)
+        # The last line of the output should be a new prompt. Exclude it from
+        # the output.
+        return output[:output.rfind(b"\r\n")].decode("UTF-8")
+
+    # -----------------------------------------------------------------------------
     # VT500 state machine below.
     # -----------------------------------------------------------------------------
 
@@ -438,6 +450,15 @@ class DefaultInputDriver(BaseDriver):
         elif c == 0x05:
             if self.cursor_position != 0:
                 self.go_to_eol()
+        # TAB: line completion
+        elif c == 0x09:
+            # Tab completion for the current system.
+            os.write(context.active_session.master, ("ls -1A --color=never -w %d\r" % context.window_size[1]).encode("ascii"))
+            ls = self.read_all_output().split("\r\n")
+            # TODO: Tab completion for the local system.
+            # TODO: Also search in the path
+            current_word = get_last_word(self.input_buffer) if self.input_buffer else ""
+            complete(current_word, ls)
         # ^K: clear line starting from the cursor.
         elif c == 0x0B:
             if self.cursor_position > 0:
