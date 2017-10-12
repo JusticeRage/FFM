@@ -54,6 +54,8 @@ class DefaultInputDriver(BaseDriver):
         self.cursor_position = 0
         self.state = self._state_ground  # Start of the state machine.
         self.parameters = ""
+        # Buffer used to store unicode chars as they are being read, as they arrive
+        # in multiple bytes:
         self.unicode_buffer = bytearray()
         # A copy of the last line received from the PTY.
         # This is used to redraw the current line and compute the cursor's position.
@@ -117,7 +119,8 @@ class DefaultInputDriver(BaseDriver):
 
     def append(self, c):
         """
-        Append a character to the input buffer at the position designated by the cursor.
+        Append a character or a string to the input buffer at the position designated by
+        the cursor.
         :param c: The character to append.
         """
         if self.cursor_position == 0 or c == '\r':
@@ -125,6 +128,17 @@ class DefaultInputDriver(BaseDriver):
         else:
             self.input_buffer = self.input_buffer[:-self.cursor_position] + c + \
                                 self.input_buffer[-self.cursor_position:]
+
+    # -----------------------------------------------------------------------------
+
+    def get_line_up_to_cursor(self):
+        """
+        :return: The current line up to the cursor's position.
+        """
+        if self.cursor_position == 0:
+            return self.input_buffer
+        else:
+            return self.input_buffer[:-self.cursor_position]
 
     # -----------------------------------------------------------------------------
 
@@ -242,6 +256,42 @@ class DefaultInputDriver(BaseDriver):
                 write(ansi.CUU() + ansi.CUF(context.window_size[1]))
             if adjust_internal_cursor:
                 self.cursor_position += 1
+
+    # -----------------------------------------------------------------------------
+
+    def perform_tab_completion(self, display_candidates=False):
+        line = self.get_line_up_to_cursor()
+        current_word = get_last_word(line) if line else ""
+        if "/" in current_word:
+            current_folder = current_word[:current_word.rfind("/") + 1]
+            # Only try to complete on the last part of the path:
+            current_word = get_last_word(line, boundary=" /")
+        else:
+            current_folder = None
+
+        if current_folder:
+            os.write(context.active_session.master, ("ls -1A --color=never --indicator-style=slash "
+                                                     "-w %d %s 2>/dev/null\r" % (context.window_size[1], current_folder)).encode("ascii"))
+        else:
+            # TODO: Also search in the path
+            os.write(context.active_session.master, ("ls -1A --color=never --indicator-style=slash "
+                                                     "-w %d 2>/dev/null\r" % context.window_size[1]).encode("ascii"))
+        ls = self.read_all_output().split("\r\n")
+        # TODO: Tab completion for the local system.
+        candidates, possible_completion = complete(current_word, ls)
+        if possible_completion:
+            if possible_completion[-1] != '/' and not candidates:
+                possible_completion += " "  # Append a space if this is not a folder name.
+            for c in possible_completion:
+                self.append(c)
+                self.print_character(c)
+
+        # Show the completion options if required
+        if not display_candidates or not candidates:
+            return
+        # TODO: Print in columns
+        write_str("\r\n" + "\t".join(candidates) + "\r\n")
+        self.draw_current_line()
 
     # -----------------------------------------------------------------------------
 
@@ -453,12 +503,8 @@ class DefaultInputDriver(BaseDriver):
         # TAB: line completion
         elif c == 0x09:
             # Tab completion for the current system.
-            os.write(context.active_session.master, ("ls -1A --color=never -w %d\r" % context.window_size[1]).encode("ascii"))
-            ls = self.read_all_output().split("\r\n")
-            # TODO: Tab completion for the local system.
-            # TODO: Also search in the path
-            current_word = get_last_word(self.input_buffer) if self.input_buffer else ""
-            complete(current_word, ls)
+            self.perform_tab_completion()
+            self.state = self._state_tab
         # ^K: clear line starting from the cursor.
         elif c == 0x0B:
             if self.cursor_position > 0:
@@ -611,6 +657,21 @@ class DefaultInputDriver(BaseDriver):
             self.append(unicode_char)
             self.print_character(unicode_char)
             self.state = self._state_ground
+
+    # -----------------------------------------------------------------------------
+
+    def _state_tab(self, c):
+        """
+        This state is used to detect multiple tabulation characters. It is *not*
+        represented in the state machine diagram in which this code is based!
+        :param c: The new byte received.
+        """
+        if c == 0x09:
+            self.perform_tab_completion(display_candidates=True)
+        else:
+            # No second tab: fall back to the Ground state parsing.
+            self.state = self._state_ground
+            self._state_ground(c)
 
     # -----------------------------------------------------------------------------
 

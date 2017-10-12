@@ -1,3 +1,4 @@
+# coding=utf-8
 """
     FFM by @JusticeRage
 
@@ -51,3 +52,4 @@ class TestStringUtils(unittest.TestCase):
         self.assertEqual(get_last_word("one two three"), "three")
         self.assertEqual(get_last_word("one two three "), "")
         self.assertEqual(get_last_word(""), "")
+        self.assertEqual(get_last_word("/tm", boundary="/"), "tm")

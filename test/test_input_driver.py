@@ -149,6 +149,18 @@ class TestDriver(unittest.TestCase):
 
     # -----------------------------------------------------------------------------
 
+    def test_get_line_up_to_cursor(self):
+        self.driver.input_buffer = "abcdef"
+        self.assertEqual(self.driver.get_line_up_to_cursor(), "abcdef")
+        self.driver.cursor_position = 1
+        self.assertEqual(self.driver.get_line_up_to_cursor(), "abcde")
+        self.driver.cursor_position = 3
+        self.assertEqual(self.driver.get_line_up_to_cursor(), "abc")
+        self.driver.cursor_position = 6
+        self.assertEqual(self.driver.get_line_up_to_cursor(), "")
+
+    # -----------------------------------------------------------------------------
+
     def _send_input(self, s):
         for c in s:
             self.driver.handle_input(c)

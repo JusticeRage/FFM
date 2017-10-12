@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
+
 def complete(current_word, candidates):
     """
     Completes the current word from a list of candidates.
@@ -29,13 +31,15 @@ def complete(current_word, candidates):
         possible = list(filter(lambda s: s.startswith(current_word), candidates))
     else:
         possible = candidates
-
     # Easy cases: no possible completion, or only one.
-    if len(candidates) == 0:
+    if len(possible) == 0:
         return None, None
-    elif len(candidates) == 1:
-        return None, candidates[0][len(current_word) - 1:]
+    elif len(possible) == 1:
+        return None, possible[0][len(current_word):]
 
     # Check whether partial completion can be applied.
-    index = len(current_word)
-    print(possible)
+    prefix = os.path.commonprefix(possible)
+    if prefix:
+        return possible, prefix[len(current_word):]
+    else:
+        return possible, None

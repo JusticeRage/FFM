@@ -93,4 +93,7 @@ def get_last_word(s, boundary=' '):
     if s[-1] in boundary:
         return ""
     index = find_last_of(s, boundary)
-    return s[index:].lstrip()
+    if index != -1:
+        return s[index+1:]
+    else:
+        return s
