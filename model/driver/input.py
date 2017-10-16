@@ -19,6 +19,7 @@ import os
 
 import model.ansi as ansi
 import model.context as context
+from misc.pretty_printing import print_columns
 from misc.stringutils import *
 from misc.tab_completion import complete
 from model.driver.base import BaseDriver
@@ -277,7 +278,6 @@ class DefaultInputDriver(BaseDriver):
             os.write(context.active_session.master, ("ls -1A --color=never --indicator-style=slash "
                                                      "-w %d 2>/dev/null\r" % context.window_size[1]).encode("ascii"))
         ls = self.read_all_output().split("\r\n")
-        # TODO: Tab completion for the local system.
         candidates, possible_completion = complete(current_word, ls)
         if possible_completion:
             if possible_completion[-1] != '/' and not candidates:
@@ -289,8 +289,8 @@ class DefaultInputDriver(BaseDriver):
         # Show the completion options if required
         if not display_candidates or not candidates:
             return
-        # TODO: Print in columns
-        write_str("\r\n" + "\t".join(candidates) + "\r\n")
+        write(b"\r\n")
+        print_columns(candidates, context.stdout.fileno(), context.window_size[1])
         self.draw_current_line()
 
     # -----------------------------------------------------------------------------
