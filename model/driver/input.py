@@ -15,32 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os
-
+from commands.command_manager import parse_commands
 import model.ansi as ansi
-import model.context as context
 from misc.pretty_printing import print_columns
 from misc.stringutils import *
 from misc.tab_completion import complete
 from model.driver.base import BaseDriver
-
-
-# -----------------------------------------------------------------------------
-
-def write(b):
-    """
-    Shorthand function that prints data to stdout. Mainly here to make the code
-    more readable, and provide a single place to redirect writes if needed.
-
-    :param b: The byte to print.
-    :return:
-    """
-    os.write(context.stdout.fileno(), b)
-
-# -----------------------------------------------------------------------------
-
-def write_str(s):
-    write(s.encode('UTF-8'))
+from model.driver.input_api import *
 
 # -----------------------------------------------------------------------------
 
@@ -78,7 +59,7 @@ class DefaultInputDriver(BaseDriver):
         # Anywhere node in the state machine.
         if c == 0x18 or c == 0x1A or 0x80 <= c <= 0x8F or 0x91 <= c <= 0x97 or c == 0x99 or c == 0x9A:
             # Execute
-            os.write(context.active_session.master, b"\x18")
+            os.write(context.active_session.master, c.to_bytes(1, "little"))
         elif c == 0x90:
             raise RuntimeError("Not implemented! (Anywhere, 0x%02X)" % c)
         elif c == 0x9B:
@@ -95,7 +76,6 @@ class DefaultInputDriver(BaseDriver):
             self._state_entry_clear()
         elif c == 0x02:
             # TODO: TEST COMMAND, DELETE
-            write(b"\t\t")
             pass
         else:
             self.state(c)
@@ -271,13 +251,13 @@ class DefaultInputDriver(BaseDriver):
             current_folder = None
 
         if current_folder:
-            os.write(context.active_session.master, ("ls -1A --color=never --indicator-style=slash "
-                                                     "-w %d %s 2>/dev/null\r" % (context.window_size[1], current_folder)).encode("ascii"))
+            output = shell_exec("ls -1A --color=never --indicator-style=slash "
+                                 "-w %d %s 2>/dev/null" % (context.window_size[1], current_folder), newline=False)
         else:
             # TODO: Also search in the path
-            os.write(context.active_session.master, ("ls -1A --color=never --indicator-style=slash "
-                                                     "-w %d 2>/dev/null\r" % context.window_size[1]).encode("ascii"))
-        ls = self.read_all_output().split("\r\n")
+            output = shell_exec("ls -1A --color=never --indicator-style=slash "
+                                "-w %d 2>/dev/null" % context.window_size[1], newline=False)
+        ls = output.split("\r\n")
         candidates, possible_completion = complete(current_word, ls)
         if possible_completion:
             if possible_completion[-1] != '/' and not candidates:
@@ -469,17 +449,6 @@ class DefaultInputDriver(BaseDriver):
             self.cursor_position -= index
 
     # -----------------------------------------------------------------------------
-
-    def read_all_output(self):
-        output = b""
-        end_marker = self.last_line.encode("UTF-8")
-        while not output.endswith(end_marker):
-            output += os.read(context.active_session.master, 4096)
-        # The last line of the output should be a new prompt. Exclude it from
-        # the output.
-        return output[:output.rfind(b"\r\n")].decode("UTF-8")
-
-    # -----------------------------------------------------------------------------
     # VT500 state machine below.
     # -----------------------------------------------------------------------------
 
@@ -521,9 +490,17 @@ class DefaultInputDriver(BaseDriver):
             if self.cursor_position != 0:
                 self.go_to_eol()
             write(b"\r\n")
+
             # TODO: check for commands
-            os.write(context.active_session.master, self.input_buffer.encode('UTF-8') + b'\r')
-            self.input_buffer = ""
+            if parse_commands(self.input_buffer):
+                # A command has been detected and was executed.
+                # Write a new prompt.
+                self.input_buffer = ""
+                self.draw_current_line()
+            else:
+                # No command detected: forward the input to the TTY.
+                os.write(context.active_session.master, self.input_buffer.encode('UTF-8') + b'\r')
+                self.input_buffer = ""
             self.cursor_position = 0
         # ^U: clear line up to the cursor.
         elif c == 0x15:

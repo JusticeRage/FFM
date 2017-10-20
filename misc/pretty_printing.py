@@ -52,7 +52,7 @@ def print_columns(strings, fd, width=80):
     # TODO: if 1 column
     if number_of_columns == 1:
         for s in strings:
-            os.write(fd, s.encode("UTF-8"))
+            os.write(fd, (s + "\r\n").encode("UTF-8"))
         return
 
     # Print each line:

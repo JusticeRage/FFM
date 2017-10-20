@@ -1,5 +1,5 @@
 """
-    ffm.py by @JusticeRage
+    FFM by @JusticeRage
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,24 +14,19 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-import os
-import sys
-import time
-
-import model.context as context
 from model.driver.input_api import *
 
-class SimpleAlias:
+class RunPyScript:
     def __init__(self, *args, **kwargs):
         pass
 
     @staticmethod
     def regexp():
-        return r"^wopwop"
+        return r"^\!py"
+
+    @staticmethod
+    def usage():
+        write_str("")
 
     def execute(self):
-        shell_exec("ls -l", print_output=True)
-        output = shell_exec("id", print_output=True)
-        if "ivan" in output:
-            write_str("YAY!\r\n")
+        output = shell_exec("ls -l")
