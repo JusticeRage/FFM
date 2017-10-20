@@ -15,10 +15,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from model.driver.input_api import *
+import os
 
 class RunPyScript:
     def __init__(self, *args, **kwargs):
-        pass
+        if len(args) != 2:
+            write_str(" ".join(args))
+            raise RuntimeError("Received %d arguments, expected 2." % len(args))
+        if not os.path.exists(args[1]):
+            raise RuntimeError("%s not found!" % args[1])
+        self.script = args[1]
+
 
     @staticmethod
     def regexp():
@@ -26,7 +33,13 @@ class RunPyScript:
 
     @staticmethod
     def usage():
-        write_str("")
+        write_str("Usage: !py [script on the local machine] [script arguments]\r\n")
+
+    @staticmethod
+    def name():
+        return "py"
 
     def execute(self):
-        output = shell_exec("ls -l")
+        with open(self.script, 'r') as f:
+            contents = f.read()
+            shell_exec("python <<'__EOF__'\r\n%s\r\n__EOF__" % contents, print_output=True)

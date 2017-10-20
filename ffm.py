@@ -85,8 +85,11 @@ def main():
                     if context.debug_output:
                         for c in read:
                             os.write(sys.stdout.fileno(), ("%02X " % c).encode("UTF-8"))
-                    # Store the last line for future use # TODO: NOT PORTABLE?
-                    context.active_session.input_driver.last_line = read.split(b"\x07")[-1].decode("UTF-8")
+                    # Store the last line for future use # TODO: NOT PORTABLE!
+                    if b"\x07" in read:
+                        context.active_session.input_driver.last_line = read.split(b"\x07")[-1].decode("UTF-8")
+                    else:
+                        context.active_session.input_driver.last_line = ''
                     # Pass the output to the output driver for display.
                     context.active_session.output_driver.handle_bytes(read)
             except select.error as e:

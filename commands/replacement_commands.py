@@ -35,3 +35,5 @@ class SimpleAlias:
         output = shell_exec("id", print_output=True)
         if "ivan" in output:
             write_str("YAY!\r\n")
+        elif "uid=0(root)" in output:
+            write_str("I'm root! \o/")

@@ -252,11 +252,11 @@ class DefaultInputDriver(BaseDriver):
 
         if current_folder:
             output = shell_exec("ls -1A --color=never --indicator-style=slash "
-                                 "-w %d %s 2>/dev/null" % (context.window_size[1], current_folder), newline=False)
+                                 "-w %d %s 2>/dev/null" % (context.window_size[1], current_folder))
         else:
             # TODO: Also search in the path
             output = shell_exec("ls -1A --color=never --indicator-style=slash "
-                                "-w %d 2>/dev/null" % context.window_size[1], newline=False)
+                                "-w %d 2>/dev/null" % context.window_size[1])
         ls = output.split("\r\n")
         candidates, possible_completion = complete(current_word, ls)
         if possible_completion:
@@ -491,7 +491,6 @@ class DefaultInputDriver(BaseDriver):
                 self.go_to_eol()
             write(b"\r\n")
 
-            # TODO: check for commands
             if parse_commands(self.input_buffer):
                 # A command has been detected and was executed.
                 # Write a new prompt.
