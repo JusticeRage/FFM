@@ -462,9 +462,14 @@ class DefaultInputDriver(BaseDriver):
         if 0x20 <= c < 0x7F:
             self.append(chr(c))
             self.print_character(chr(c))
+        # ^A: go to the beginning of the line.
         elif c == 0x01:
             if self.cursor_position != len(self.input_buffer):
                 self.go_to_sol()
+        # ^C: forward to the underlying TTY, empty the current buffer.
+        elif c == 0x03:
+            self.input_buffer = ""
+            os.write(context.active_session.master, b"\x03")
         # ^E: go to the end of the line.
         elif c == 0x05:
             if self.cursor_position != 0:

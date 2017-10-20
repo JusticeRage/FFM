@@ -21,12 +21,14 @@ import argparse
 import array
 import fcntl
 import os
+import random
 import select
 import signal
 import sys
 import termios
 import tty
 
+from misc.banners import BANNERS
 import model.context as context
 from model.driver.input import DefaultInputDriver
 from model.session import Session
@@ -62,6 +64,9 @@ def main():
     context.debug_output = args.debug_output
     context.stdout = open(args.stdout, "wb") if args.stdout is not None else sys.stdout
 
+    # Print the banner
+    print(random.choice(BANNERS) + "\n")
+
     context.terminal_driver = DefaultInputDriver()
     stdin_fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(stdin_fd)
@@ -76,7 +81,7 @@ def main():
     try:
         while context.active_session and context.active_session.bash.poll() is None:
             try:
-                r, w, e = select.select([sys.stdin, context.active_session.master], [], [])
+                r, w, e = select.select([sys.stdin, context.active_session.master], [], [], 1)
                 if sys.stdin in r:
                     typed_char = os.read(sys.stdin.fileno(), 1)
                     context.active_session.input_driver.handle_input(typed_char)
@@ -103,6 +108,10 @@ def main():
                 filename = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 print("\r\n%s (%s, line %d)\r" % (str(e), filename, exc_tb.tb_lineno))
                 return
+
+        # Bash has finished running
+        print("FFM disabled.\r")
+
     finally:
         termios.tcsetattr(stdin_fd, termios.TCSADRAIN, old_settings)
         signal.signal(signal.SIGWINCH, old_handler)
