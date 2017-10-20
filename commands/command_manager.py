@@ -15,12 +15,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import glob
+import importlib
+import os
 import re
-from commands.replacement_commands import SimpleAlias
-from commands.run_py_script import RunPyScript
-from model.driver.input_api import write_str
+from model.driver.input_api import write_str, LogLevel
 
-COMMAND_LIST = [SimpleAlias, RunPyScript]
+COMMAND_LIST = set()
+
+def register_plugin(plugin):
+    COMMAND_LIST.add(plugin)
 
 def parse_commands(command_line):
     for c in COMMAND_LIST:
@@ -32,7 +36,7 @@ def parse_commands(command_line):
             except RuntimeError as e:  # The constructor throws: show the command usage.
                 c.usage()
                 if str(e):
-                    write_str("%s\r\n" % str(e))
+                    write_str("%s\r\n" % str(e), LogLevel.WARNING)
             else:
                 try:
                     command_instance.execute()
@@ -41,3 +45,39 @@ def parse_commands(command_line):
             return True
     # No commands match, don't do anything.
     return False
+
+# -----------------------------------------------------------------------------
+
+class ListPlugins:
+    def __init__(self, *nargs, **kwargs):
+        pass
+
+    def execute(self):
+        write_str("TEST")
+
+    @staticmethod
+    def regexp():
+        return r"^\!list"
+
+    @staticmethod
+    def name():
+        return "!list"
+
+    @staticmethod
+    def usage():
+        write_str("Usage: !list\r\n")
+
+# -----------------------------------------------------------------------------
+# This section registers all known commands at startup. It starts by adding
+# "builtin" commands, and then scans the current folder for any .py file.
+# -----------------------------------------------------------------------------
+
+# Register all known commands
+register_plugin(ListPlugins)
+# Look for commands in the folder
+folder = os.path.dirname(__file__)
+for f in glob.glob(os.path.join(folder, "*.py")):
+    if f == __file__ or f.endswith("__init__.py"):
+        continue
+    with open(f, "rb") as fd:
+        exec(compile(fd.read(), f, 'exec'))

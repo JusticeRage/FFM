@@ -15,14 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from model.driver.input_api import *
+from commands.command_manager import register_plugin
 import os
 
 
 class RunPyScript:
     def __init__(self, *args, **kwargs):
         if len(args) < 2:
-            write_str(" ".join(args))
-            raise RuntimeError("Received %d arguments, expected 2." % len(args))
+            raise RuntimeError("Received %d argument(s), expected 2." % len(args))
         if not os.path.exists(args[1]):
             raise RuntimeError("%s not found!" % args[1])
         self.script = args[1]
@@ -34,13 +34,16 @@ class RunPyScript:
 
     @staticmethod
     def usage():
-        write_str("Usage: !py [script on the local machine] [script arguments]\r\n")
+        write_str("Usage: !py [script on the local machine] [script arguments]\r\n", LogLevel.WARNING)
 
     @staticmethod
     def name():
-        return "py"
+        return "!py"
 
     def execute(self):
         with open(self.script, 'r') as f:
             contents = f.read()
             shell_exec("python - %s <<'__EOF__'\r\n%s\r\n__EOF__" % (self.script_args, contents), print_output=True)
+
+
+register_plugin(RunPyScript)

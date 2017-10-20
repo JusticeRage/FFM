@@ -15,11 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os
-import sys
-import time
-
-import model.context as context
+from commands.command_manager import register_plugin
 from model.driver.input_api import *
 
 class SimpleAlias:
@@ -37,3 +33,6 @@ class SimpleAlias:
             write_str("YAY!\r\n")
         elif "uid=0(root)" in output:
             write_str("I'm root! \o/")
+
+
+register_plugin(SimpleAlias)
