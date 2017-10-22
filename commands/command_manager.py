@@ -53,7 +53,9 @@ class ListPlugins:
         pass
 
     def execute(self):
-        write_str("TEST")
+        write_str("List of commands available:\r\n")
+        for c in COMMAND_LIST:
+            write_str("\t%s: %s\r\n" % (c.name(), c.description()))
 
     @staticmethod
     def regexp():
@@ -62,6 +64,10 @@ class ListPlugins:
     @staticmethod
     def name():
         return "!list"
+
+    @staticmethod
+    def description():
+        return "Show the list of available commands."
 
     @staticmethod
     def usage():

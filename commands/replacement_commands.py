@@ -26,6 +26,14 @@ class SimpleAlias:
     def regexp():
         return r"^wopwop"
 
+    @staticmethod
+    def name():
+        return "wopwop"
+
+    @staticmethod
+    def description():
+        return "Simple command used to perform tests."
+
     def execute(self):
         shell_exec("ls -l", print_output=True)
         output = shell_exec("id", print_output=True)

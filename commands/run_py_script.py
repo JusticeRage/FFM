@@ -40,6 +40,10 @@ class RunPyScript:
     def name():
         return "!py"
 
+    @staticmethod
+    def description():
+        return "Runs a python script from the local machine in memory."
+
     def execute(self):
         with open(self.script, 'r') as f:
             contents = f.read()
