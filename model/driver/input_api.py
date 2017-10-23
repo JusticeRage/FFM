@@ -51,7 +51,6 @@ def write_str(s, level=LogLevel.INFO):
     Shorthand function that prints a string to stdout.
     :param s: The string to print.
     """
-    #write_str("LEVEL = %s **********\r\n" % level)
     if level == LogLevel.WARNING:
         msg = WARNING + s + ENDC
     elif level == LogLevel.ERROR:
@@ -81,7 +80,11 @@ def _read_all_output():
         output += os.read(context.active_session.master, 4096)
     # The last line of the output should be a new prompt or the marker. Exclude it from
     # the output.
-    return output[:output.rfind(b"\r\n")].decode("UTF-8")
+    index = output.rfind(b"\r\n")
+    if index != -1:
+        return output[:index].decode("UTF-8")
+    else:  # No new line in the output: it's only the marker then.
+        return ""
 
 # -----------------------------------------------------------------------------
 
@@ -96,6 +99,6 @@ def shell_exec(command, print_output=False):
     """
     os.write(context.active_session.master, ("%s\r" % command).encode("UTF-8"))
     output = _read_all_output()
-    if print_output:
+    if print_output and output:
         write_str(output + "\r\n")
     return output

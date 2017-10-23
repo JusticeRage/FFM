@@ -35,12 +35,12 @@ class SimpleAlias:
         return "Simple command used to perform tests."
 
     def execute(self):
-        shell_exec("ls -l", print_output=True)
-        output = shell_exec("id", print_output=True)
+        shell_exec("echo \"dGVzdAo=\" |base64 -d >> /tmp/test", print_output=True)
+        """output = shell_exec("id", print_output=True)
         if "ivan" in output:
             write_str("YAY!\r\n")
         elif "uid=0(root)" in output:
-            write_str("I'm root! \o/")
+            write_str("I'm root! \o/")"""
 
 
 register_plugin(SimpleAlias)
