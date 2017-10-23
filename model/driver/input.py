@@ -42,6 +42,11 @@ class DefaultInputDriver(BaseDriver):
         # A copy of the last line received from the PTY.
         # This is used to redraw the current line and compute the cursor's position.
         self.last_line = ""
+        # A list of the past commands executed on in the environment.
+        self.history = []
+        self.history_cursor = 0
+        # A buffer where the current line is saved while the user browses history.
+        self.history_tmp = ""
 
     # -----------------------------------------------------------------------------
 
@@ -449,6 +454,41 @@ class DefaultInputDriver(BaseDriver):
             self.cursor_position -= index
 
     # -----------------------------------------------------------------------------
+
+    def history_up(self):
+        # Check if we can go up in the history:
+        if self.history_cursor >= len(self.history):
+            return
+
+        # If we are not currently in the history, save the current line.
+        if self.history_cursor == 0:
+            # Save the current line
+            self.history_tmp = self.input_buffer
+
+        # Replace the current line with the former one in the history.
+        self.history_cursor += 1
+        self.input_buffer = self.history[-self.history_cursor]
+        self.go_to_eol()
+        self.clear_line()
+        self.draw_current_line()
+
+    # -----------------------------------------------------------------------------
+
+    def history_down(self):
+        # Check if we can go down in the history.
+        if self.history_cursor == 0:
+            return
+
+        self.history_cursor -= 1
+        if self.history_cursor == 0:
+            self.input_buffer = self.history_tmp
+        else:
+            self.input_buffer = self.history[-self.history_cursor]
+        self.go_to_eol()
+        self.clear_line()
+        self.draw_current_line()
+
+    # -----------------------------------------------------------------------------
     # VT500 state machine below.
     # -----------------------------------------------------------------------------
 
@@ -495,6 +535,11 @@ class DefaultInputDriver(BaseDriver):
             if self.cursor_position != 0:
                 self.go_to_eol()
             write(b"\r\n")
+
+            # Add the command to the history if it's not empty.
+            if self.input_buffer.strip():
+                self.history.append(self.input_buffer)
+                self.history_cursor = 0
 
             if parse_commands(self.input_buffer):
                 # A command has been detected and was executed.
@@ -578,7 +623,11 @@ class DefaultInputDriver(BaseDriver):
     # -----------------------------------------------------------------------------
 
     def _csi_dispatch(self, c):
-        if c == 0x43:
+        if c == 0x41:
+            self.history_up()
+        elif c == 0x42:
+            self.history_down()
+        elif c == 0x43:
             self.cursor_forward()
         elif c == 0x44:
             self.cursor_back()
