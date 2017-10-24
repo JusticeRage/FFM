@@ -17,6 +17,7 @@
 from model.driver.input_api import *
 from commands.command_manager import register_plugin
 import base64
+import gzip
 import hashlib
 import os
 import tqdm
@@ -52,13 +53,14 @@ class Upload:
         with open(self.target_file, 'rb') as f:
             md5 = hashlib.md5()
             with tqdm.tqdm(total=os.stat(self.target_file).st_size, unit="o", unit_scale=True) as progress_bar:
-                contents = f.read(1024)
+                contents = f.read(2048)
                 while contents:
-                    b64 = base64.b64encode(contents)
-                    shell_exec("echo \"%s\" |base64 -d >> %s" % (b64.decode("ascii"), self.destination))
+                    data = gzip.compress(contents)
+                    b64 = base64.b64encode(data)
+                    shell_exec("echo \"%s\" |base64 -d |gunzip >> %s" % (b64.decode("ascii"), self.destination))
                     md5.update(contents)
                     progress_bar.update(len(contents))
-                    contents = f.read(1024)
+                    contents = f.read(2048)
         md5sum = md5.hexdigest()
         remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % self.destination)
         write_str("Local MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
