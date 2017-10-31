@@ -34,6 +34,7 @@ import model.context as context
 from model.driver.input import DefaultInputDriver
 from model.session import Session
 
+PROMPT_REGEXP = r"^\[?\w+@\w+[: ][/~].*[$#] $|^\$ $"
 
 # -----------------------------------------------------------------------------
 
@@ -94,9 +95,9 @@ def main():
                     # Store the last line for future use # TODO: NOT PORTABLE!
                     # This is motivated by my Debian shell's prompt containing weird \x07 bytes separating
                     # two prompt occurrences.
-                    if b"\x07" in read:  # TODO: bug when cat-ing a binary file!
+                    if len(read) < 150 and b"\x07" in read:  # TODO: bug when cat-ing a binary file!
                         context.active_session.input_driver.last_line = read.split(b"\x07")[-1].decode("UTF-8", errors='ignore')
-                    elif re.match(r"^\w+@\w+:[/~].*[$#] $", read.decode("UTF-8", errors='ignore'), re.UNICODE):
+                    elif re.match(PROMPT_REGEXP, read.decode("UTF-8", errors='ignore'), re.UNICODE):
                         context.active_session.input_driver.last_line = read.decode("UTF-8")
                     else:
                         context.active_session.input_driver.last_line = ''

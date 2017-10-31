@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from model.command.command import Command
 from model.driver.input_api import *
 from commands.command_manager import register_plugin
 import base64
@@ -23,7 +24,7 @@ import os
 import tqdm
 
 
-class Upload:
+class Upload(Command):
     def __init__(self, *args, **kwargs):
         if len(args) < 3:
             raise RuntimeError("Received %d argument(s), expected 3." % len(args))
@@ -50,6 +51,11 @@ class Upload:
         return "Uploads a file to the remote machine."
 
     def execute(self):
+        # Abort if there is already a file with this name.
+        if file_exists(self.destination):
+            write_str("%s already exists! Aborting.\r\n" % self.destination, LogLevel.WARNING)
+            return
+
         with open(self.target_file, 'rb') as f:
             md5 = hashlib.md5()
             with tqdm.tqdm(total=os.stat(self.target_file).st_size, unit="o", unit_scale=True) as progress_bar:

@@ -19,6 +19,7 @@ import os
 from model import context
 import random
 import string
+import sys
 
 MARKER_STR = ''.join(random.choice(string.ascii_letters) for i in range(32))
 MARKER = MARKER_STR.encode("UTF-8")
@@ -35,7 +36,8 @@ def write(b):
     more readable, and provide a single place to redirect writes if needed.
     :param b: The byte to print.
     """
-    os.write(context.stdout.fileno(), b)
+    out_fd = context.stdout.fileno() if context.stdout else sys.stdout.fileno()
+    os.write(out_fd, b)
 
 # -----------------------------------------------------------------------------
 
@@ -102,3 +104,14 @@ def shell_exec(command, print_output=False):
     if print_output and output:
         write_str(output + "\r\n")
     return output
+
+# -----------------------------------------------------------------------------
+
+def file_exists(path):
+    """
+    Tests whether a file exists.
+    :param path: The path to test.
+    :return: True if the file exists, False otherwise.
+    """
+    output = shell_exec("test -f %s ; echo $?" % path)
+    return int(output) == 0

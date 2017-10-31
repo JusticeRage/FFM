@@ -15,11 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from model.driver.input_api import *
+from model.command.command import Command
 from commands.command_manager import register_plugin
 import os
 
 
-class RunPyScript:
+class RunPyScript(Command):
     def __init__(self, *args, **kwargs):
         if len(args) < 2:
             raise RuntimeError("Received %d argument(s), expected 2." % len(args))

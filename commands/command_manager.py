@@ -15,16 +15,25 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import abc
 import glob
-import importlib
 import os
 import re
+from model.command.command import Command
 from model.driver.input_api import write_str, LogLevel
 
 COMMAND_LIST = set()
 
 def register_plugin(plugin):
-    COMMAND_LIST.add(plugin)
+    if not issubclass(plugin, Command):
+        write_str("Tried to register %s which is not a valid command!\r\n" % str(plugin), LogLevel.ERROR)
+        return
+    elif plugin in COMMAND_LIST:
+        write_str("Tried to register %s twice!\r\n" % str(plugin), LogLevel.ERROR)
+        return
+    else:
+        COMMAND_LIST.add(plugin)
+
 
 def parse_commands(command_line):
     for c in COMMAND_LIST:
@@ -48,7 +57,7 @@ def parse_commands(command_line):
 
 # -----------------------------------------------------------------------------
 
-class ListPlugins:
+class ListPlugins(Command):
     def __init__(self, *nargs, **kwargs):
         pass
 
@@ -78,7 +87,7 @@ class ListPlugins:
 # "builtin" commands, and then scans the current folder for any .py file.
 # -----------------------------------------------------------------------------
 
-# Register all known commands
+# Register all "builtin" commands
 register_plugin(ListPlugins)
 # Look for commands in the folder
 folder = os.path.dirname(__file__)

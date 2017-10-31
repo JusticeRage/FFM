@@ -1,5 +1,5 @@
 """
-    ffm.py by @JusticeRage
+    FFM by @JusticeRage
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,33 +14,26 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from abc import abstractmethod, ABCMeta
 
-from commands.command_manager import register_plugin
-from model.command.command import Command
-from model.driver.input_api import *
 
-class SimpleAlias(Command):
-    def __init__(self, *args, **kwargs):
-        pass
+class Command(metaclass=ABCMeta):
 
-    @staticmethod
-    def regexp():
-        return r"^wopwop"
-
-    @staticmethod
-    def name():
-        return "wopwop"
-
-    @staticmethod
-    def description():
-        return "Simple command used to perform tests."
-
+    @abstractmethod
     def execute(self):
-        output = shell_exec("id", print_output=True)
-        if "ivan" in output:
-            write_str("YAY!\r\n")
-        elif "uid=0(root)" in output:
-            write_str("I'm root! \o/")
+        raise NotImplementedError("Method execute is not implemented")
 
+    @staticmethod
+    @abstractmethod
+    def regexp():
+        raise NotImplementedError("Method regexp is not implemented")
 
-register_plugin(SimpleAlias)
+    @staticmethod
+    @abstractmethod
+    def name():
+        raise NotImplementedError("Method name is not implemented")
+
+    @staticmethod
+    @abstractmethod
+    def description():
+        raise NotImplementedError("Method description is not implemented")

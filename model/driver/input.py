@@ -179,6 +179,18 @@ class DefaultInputDriver(BaseDriver):
 
     # -----------------------------------------------------------------------------
 
+    def delete(self):
+        """
+        Deletes the character located immediately after the cursor.
+        """
+        # Do nothing if there is nothing after the cursor.
+        if self.cursor_position == 0:
+            return
+        self.cursor_forward()
+        self.backspace()
+
+    # -----------------------------------------------------------------------------
+
     def delete_word(self):
         """
         Handles the ^W character.
@@ -219,10 +231,9 @@ class DefaultInputDriver(BaseDriver):
 
     def cursor_forward(self, adjust_internal_cursor=True):
         """
-        Moves the on-screen caret back one position, going up to the previous line if needed.
+        Moves the on-screen caret forward one position, going down to the next line if needed.
         :param adjust_internal_cursor: Whether the internal cursor should be updated accordingly.
         This should always be True unless you have a very good reason not to do so.
-        :return:
         """
         if self.cursor_position > 0:
             if not self.caret_at_eol():
@@ -235,6 +246,11 @@ class DefaultInputDriver(BaseDriver):
     # -----------------------------------------------------------------------------
 
     def cursor_back(self, adjust_internal_cursor=True):
+        """
+        Moves the on-screen caret back one position, going up to the previous line if needed.
+        :param adjust_internal_cursor: Whether the internal cursor should be updated accordingly.
+        This should always be True unless you have a very good reason not to do so.
+        """
         if self.cursor_position + 1 <= len(self.input_buffer):
             if not self.caret_at_sol():
                 write(ansi.CUB())
@@ -662,6 +678,10 @@ class DefaultInputDriver(BaseDriver):
         # ^Left
         elif c == 0x44:
             self._backwards_word_move()
+            self.state = self._state_ground
+        elif c == 0x7E:  # Suppr key
+            self.delete()
+            self.parameters = ""
             self.state = self._state_ground
         else:
             write_str("Parameters: " + self.parameters)
