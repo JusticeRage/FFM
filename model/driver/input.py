@@ -19,7 +19,7 @@ from commands.command_manager import parse_commands
 import model.ansi as ansi
 from misc.pretty_printing import print_columns
 from misc.stringutils import *
-from misc.tab_completion import complete
+from misc.tab_completion import complete, remote_completion, local_completion
 from model.driver.base import BaseDriver
 from model.driver.input_api import *
 
@@ -261,24 +261,28 @@ class DefaultInputDriver(BaseDriver):
 
     # -----------------------------------------------------------------------------
 
-    def perform_tab_completion(self, display_candidates=False):
+    def perform_tab_completion(self, display_candidates=False, seed_function=remote_completion):
+        """
+        This function is called when the user wants to complete the currently typed input.
+        The current word will be completed as much as possible.
+        :param display_candidates: Whether the remaining candidates should be shown on the
+        screen.
+        :param seed_function: A function that is used to generate candidates. Depending
+        on the context, the user may want to get predictions for the current/remote machine,
+        or the local one (for instance, if the user wants to reference a file on the computer
+        where FFM is running, and not the box they SSH'd into).
+        """
         line = self.get_line_up_to_cursor()
         current_word = get_last_word(line) if line else ""
-        if "/" in current_word:
+        if "/" in current_word:  # TODO: also look for | and ;.
             current_folder = current_word[:current_word.rfind("/") + 1]
             # Only try to complete on the last part of the path:
             current_word = get_last_word(line, boundary=" /")
         else:
             current_folder = None
 
-        if current_folder:
-            output = shell_exec("ls -1A --color=never --indicator-style=slash "
-                                 "-w %d %s 2>/dev/null" % (context.window_size[1], current_folder))
-        else:
-            # TODO: Also search in the path
-            output = shell_exec("ls -1A --color=never --indicator-style=slash "
-                                "-w %d 2>/dev/null" % context.window_size[1])
-        ls = output.split("\r\n")
+        ls = seed_function(current_folder)
+
         candidates, possible_completion = complete(current_word, ls)
         if possible_completion:
             if possible_completion[-1] != '/' and not candidates:
@@ -290,6 +294,7 @@ class DefaultInputDriver(BaseDriver):
         # Show the completion options if required
         if not display_candidates or not candidates:
             return
+        # TODO: If there are too many candidates, ask before displaying them all.
         write(b"\r\n")
         print_columns(candidates, context.stdout.fileno(), context.window_size[1])
         self.draw_current_line()
@@ -522,10 +527,10 @@ class DefaultInputDriver(BaseDriver):
         elif c == 0x01:
             if self.cursor_position != len(self.input_buffer):
                 self.go_to_sol()
-        # ^C: forward to the underlying TTY, empty the current buffer.
-        elif c == 0x03:
+        # ^C or ^D: forward to the underlying TTY, empty the current buffer.
+        elif c == 0x03 or c == 0x04:
             self.input_buffer = ""
-            os.write(context.active_session.master, b"\x03")
+            os.write(context.active_session.master, bytes([c]))
         # ^E: go to the end of the line.
         elif c == 0x05:
             if self.cursor_position != 0:
@@ -647,12 +652,16 @@ class DefaultInputDriver(BaseDriver):
             self.cursor_forward()
         elif c == 0x44:
             self.cursor_back()
+        elif c == 0x5A:  # Shift + Tab.
+            # Tab completion for the local system.
+            self.perform_tab_completion(seed_function=local_completion, display_candidates=True)
         else:
             raise RuntimeError("Not implemented! (csi_dispatch, 0x%02X)" % c)
 
     # -----------------------------------------------------------------------------
 
     def _state_csi_entry(self, c):
+        self.parameters = ""
         if c == 0x7F:
             return
         elif 0x0 <= c <= 0x17 or c == 0x19 or 0x1C <= c <= 0x1F:

@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os
+from model.driver.input_api import *
 
 def complete(current_word, candidates):
     """
@@ -43,3 +43,54 @@ def complete(current_word, candidates):
         return possible, prefix[len(current_word):]
     else:
         return possible, None
+
+# -----------------------------------------------------------------------------
+
+def remote_completion(base_directory):
+    """
+    This function returns a list of possible completion candidates by looking
+    at the contents of the current directory, through the PTY. It should be
+    used by default, as it returns results from the machine currently
+    receiving commands.
+    :param base_directory: The base directory to search from.
+    :return: A list of all the files and folders in the current "path".
+    """
+    if base_directory:
+        output = shell_exec("ls -1A --color=never --indicator-style=slash "
+                            "-w %d %s 2>/dev/null" % (context.window_size[1], base_directory))
+    else:
+        output = shell_exec("ls -1A --color=never --indicator-style=slash "
+                            "-w %d 2>/dev/null" % context.window_size[1])
+
+    # Add results from the path
+    output += shell_exec("ls -1A --color=never --indicator-style=slash -w %d "
+                         "`echo $PATH |tr ':' ' '` |grep -ve ':$\|^$' |sort -u "
+                         "2>/dev/null" % context.window_size[1])
+
+    # ls `echo $PATH |tr ":" " "`
+    return sorted(output.split("\r\n"))
+
+# -----------------------------------------------------------------------------
+
+def local_completion(base_directory):
+    """
+    This function returns a list of possible completion candidates from the local
+    machine (i.e. the one on which FFM is running, which may not be the one that
+    currently executes the command - the user may have SSH'd into another one).
+    :param base_directory: The base directory to search from.
+    :return: A list of all the files and folders in the current "path".
+    """
+    candidates = set()
+    if not base_directory:
+        base_directory = "."
+    candidates.update(os.listdir(base_directory))
+
+    # Also search the PATH:
+    try:
+        path = os.environ["PATH"]
+    except KeyError:
+        return candidates
+    for p in path.split(":"):
+        if p:
+            candidates.update(os.listdir(p))
+    return sorted(candidates)
