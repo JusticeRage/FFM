@@ -62,10 +62,12 @@ def remote_completion(base_directory):
         output = shell_exec("ls -1A --color=never --indicator-style=slash "
                             "-w %d 2>/dev/null" % context.window_size[1])
 
-    # Add results from the path
-    output += shell_exec("ls -1A --color=never --indicator-style=slash -w %d "
-                         "`echo $PATH |tr ':' ' '` |grep -ve ':$\|^$' |sort -u "
-                         "2>/dev/null" % context.window_size[1])
+    # Add results from the path if needed
+    if not base_directory:
+        output += "\r\n"
+        output += shell_exec("ls -1A --color=never --indicator-style=slash -w %d "
+                             "`echo $PATH |tr ':' ' '` |grep -ve ':$\|^$' |sort -u "
+                             "2>/dev/null" % context.window_size[1])
 
     # ls `echo $PATH |tr ":" " "`
     return sorted(output.split("\r\n"))
@@ -81,16 +83,15 @@ def local_completion(base_directory):
     :return: A list of all the files and folders in the current "path".
     """
     candidates = set()
-    if not base_directory:
-        base_directory = "."
-    candidates.update(os.listdir(base_directory))
+    candidates.update(os.listdir(base_directory if base_directory else "."))
 
-    # Also search the PATH:
-    try:
-        path = os.environ["PATH"]
-    except KeyError:
-        return candidates
-    for p in path.split(":"):
-        if p:
-            candidates.update(os.listdir(p))
+    # Also search the PATH if it makes sense in the context:
+    if not base_directory:
+        try:
+            path = os.environ["PATH"]
+        except KeyError:
+            return candidates
+        for p in path.split(":"):
+            if p:
+                candidates.update(os.listdir(p))
     return sorted(candidates)

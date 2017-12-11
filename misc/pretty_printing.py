@@ -49,7 +49,6 @@ def print_columns(strings, fd, width=80):
         max_sizes = new_max_size  # Keep a copy of the size of each column
         new_max_size = []
 
-    # TODO: if 1 column
     if number_of_columns == 1:
         for s in strings:
             os.write(fd, (s + "\r\n").encode("UTF-8"))

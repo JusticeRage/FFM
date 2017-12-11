@@ -30,7 +30,11 @@ class Upload(Command):
             raise RuntimeError("Received %d argument(s), expected 3." % len(args))
         if not os.path.exists(args[1]):
             raise RuntimeError("%s not found!" % args[1])
-        # TODO: Verify if the remote file exists and prevent overwrite?
+
+        # Abort if there is already a file with this name.
+        if file_exists(args[2]):
+            raise RuntimeError("%s already exists! Aborting." % args[2])
+
         self.target_file = args[1]
         self.destination = args[2]
 
@@ -51,11 +55,6 @@ class Upload(Command):
         return "Uploads a file to the remote machine."
 
     def execute(self):
-        # Abort if there is already a file with this name.
-        if file_exists(self.destination):
-            write_str("%s already exists! Aborting.\r\n" % self.destination, LogLevel.WARNING)
-            return
-
         with open(self.target_file, 'rb') as f:
             md5 = hashlib.md5()
             with tqdm.tqdm(total=os.stat(self.target_file).st_size, unit="o", unit_scale=True) as progress_bar:
