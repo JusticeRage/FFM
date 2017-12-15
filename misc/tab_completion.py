@@ -69,7 +69,6 @@ def remote_completion(base_directory):
                              "`echo $PATH |tr ':' ' '` |grep -ve ':$\|^$' |sort -u "
                              "2>/dev/null" % context.window_size[1])
 
-    # ls `echo $PATH |tr ":" " "`
     return sorted(output.split("\r\n"))
 
 # -----------------------------------------------------------------------------

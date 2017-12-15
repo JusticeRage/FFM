@@ -273,8 +273,10 @@ class DefaultInputDriver(BaseDriver):
         where FFM is running, and not the box they SSH'd into).
         """
         line = self.get_line_up_to_cursor()
-        current_word = get_last_word(line) if line else ""
-        if "/" in current_word:  # TODO: also look for | and ;.
+        # The word boundary for tab completion includes "|" and ";". This allows
+        # commands like 'echo test |grep ...' to be parsed correctly.
+        current_word = get_last_word(line, " |;") if line else ""
+        if "/" in current_word:
             current_folder = current_word[:current_word.rfind("/") + 1]
             # Only try to complete on the last part of the path:
             current_word = get_last_word(line, boundary=" /")
@@ -285,11 +287,16 @@ class DefaultInputDriver(BaseDriver):
 
         candidates, possible_completion = complete(current_word, ls)
         if possible_completion:
-            if possible_completion[-1] != '/' and not candidates:
-                possible_completion += " "  # Append a space if this is not a folder name.
             for c in possible_completion:
+                # Escaped characters:
+                if c in ' !"$&\'()*,:;<=>?@[\\]^`{|}':
+                    self.append("\\")
+                    self.print_character("\\")
                 self.append(c)
                 self.print_character(c)
+            if possible_completion[-1] != '/' and not candidates:
+                self.append(" ")  # Append a space if this is not a folder name.
+                self.print_character(" ")
 
         # Show the completion options if required
         if not display_candidates or not candidates:
