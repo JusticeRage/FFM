@@ -79,6 +79,7 @@ def _read_all_output():
         end_marker = MARKER
         os.write(context.active_session.master, ("echo -n %s\r" % MARKER_STR).encode("UTF-8"))
     while not output.endswith(end_marker):
+        # TODO: Check for timeouts here
         output += os.read(context.active_session.master, 4096)
     # The last line of the output should be a new prompt or the marker. Exclude it from
     # the output.
@@ -87,6 +88,17 @@ def _read_all_output():
         return output[:index].decode("UTF-8")
     else:  # No new line in the output: it's only the marker then.
         return ""
+
+# -----------------------------------------------------------------------------
+
+def pass_command(command):
+    """
+    Simply passes a command to the underlying shell. The output is completely
+    ignored.
+    :param command: The command to run.
+    :return: None
+    """
+    os.write(context.active_session.master, ("%s\r" % command).encode("UTF-8"))
 
 # -----------------------------------------------------------------------------
 
@@ -99,7 +111,7 @@ def shell_exec(command, print_output=False):
     to stdout.
     :return: The output of the command.
     """
-    os.write(context.active_session.master, ("%s\r" % command).encode("UTF-8"))
+    pass_command(command)
     output = _read_all_output()
     if print_output and output:
         write_str(output + "\r\n")

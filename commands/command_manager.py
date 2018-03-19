@@ -50,7 +50,7 @@ def parse_commands(command_line):
                 try:
                     command_instance.execute()
                 except Exception as e:
-                    write_str("Command failed with error: %s.\r\n" % str(e), LogLevel.WARNING)
+                    write_str("Command failed with error: %s\r\n" % str(e), LogLevel.WARNING)
             return True
     # No commands match, don't do anything.
     return False
@@ -63,8 +63,12 @@ class ListPlugins(Command):
 
     def execute(self):
         write_str("List of commands available:\r\n")
+        strings = []
         for c in COMMAND_LIST:
-            write_str("\t%s: %s\r\n" % (c.name(), c.description()))
+            strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+        # Sort the plugins by alphabetical order.
+        for s in sorted(strings):
+            write_str(s)
 
     @staticmethod
     def regexp():

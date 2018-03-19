@@ -15,32 +15,60 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import time
 from commands.command_manager import register_plugin
 from model.command.command import Command
 from model.driver.input_api import *
 
-class SimpleAlias(Command):
+class GetOS(Command):
     def __init__(self, *args, **kwargs):
         pass
 
     @staticmethod
     def regexp():
-        return r"^wopwop"
+        return r"^\s*!os"
 
     @staticmethod
     def name():
-        return "wopwop"
+        return "!os"
 
     @staticmethod
     def description():
-        return "Simple command used to perform tests."
+        return "Prints the distribution of the current machine."
 
     def execute(self):
-        output = shell_exec("id", print_output=True)
-        if "ivan" in output:
-            write_str("YAY!\r\n")
-        elif "uid=0(root)" in output:
-            write_str("I'm root! \o/")
+        shell_exec("cat /etc/*release*", print_output=True)
+
+# -----------------------------------------------------------------------------
+
+class PtySpawn(Command):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def regexp():
+        return r"^\s*!pty\s+"
+
+    @staticmethod
+    def name():
+        return "!pty"
+
+    @staticmethod
+    def description():
+        return "Spawns a PTY in the current shell."
+
+    def execute(self):
+        if context.active_session.input_driver.last_line is not None:
+            raise RuntimeError("A TTY already seems to be present.")
+
+        pass_command("python -c 'import pty; pty.spawn(\"/bin/sh\")'")
+        # Sleep a little bit to allow the pty to be created.
+        time.sleep(0.5)
+        pass_command("unset HISTFILE")
+        time.sleep(0.2)
+        pass_command("stty -echo")
 
 
-register_plugin(SimpleAlias)
+
+register_plugin(GetOS)
+register_plugin(PtySpawn)
