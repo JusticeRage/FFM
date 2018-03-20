@@ -659,6 +659,10 @@ class DefaultInputDriver(BaseDriver):
             self.cursor_forward()
         elif c == 0x44:
             self.cursor_back()
+        elif c == 0x46:
+            self.go_to_eol()
+        elif c == 0x48:
+            self.go_to_sol()
         elif c == 0x5A:  # Shift + Tab.
             # Tab completion for the local system.
             self.perform_tab_completion(seed_function=local_completion, display_candidates=True)
