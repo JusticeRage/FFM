@@ -20,6 +20,8 @@ from commands.command_manager import register_plugin
 from model.command.command import Command
 from model.driver.input_api import *
 
+# -----------------------------------------------------------------------------
+
 class GetOS(Command):
     def __init__(self, *args, **kwargs):
         pass
@@ -68,7 +70,29 @@ class PtySpawn(Command):
         time.sleep(0.2)
         pass_command("stty -echo")
 
+# -----------------------------------------------------------------------------
+
+class Debug(Command):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def regexp():
+        return r"^\s*!dbg"
+
+    @staticmethod
+    def name():
+        return "!dbg"
+
+    @staticmethod
+    def description():
+        return "Prints debug information."
+
+    def execute(self):
+        write_str("Current command prompt: %s\r\n" %
+                  context.active_session.input_driver.last_line.encode("UTF-8"), LogLevel.WARNING)
 
 
 register_plugin(GetOS)
 register_plugin(PtySpawn)
+register_plugin(Debug)

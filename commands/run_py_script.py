@@ -24,9 +24,9 @@ class RunPyScript(Command):
     def __init__(self, *args, **kwargs):
         if len(args) < 2:
             raise RuntimeError("Received %d argument(s), expected 2." % len(args))
-        if not os.path.exists(args[1]):
-            raise RuntimeError("%s not found!" % args[1])
-        self.script = args[1]
+        self.script = os.path.expanduser(args[1])
+        if not os.path.exists(self.script):
+            raise RuntimeError("%s not found!" % self.script)
         self.script_args = " ".join(args[2:]) if len(args) > 2 else None
 
     @staticmethod

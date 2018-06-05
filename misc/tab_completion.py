@@ -82,7 +82,13 @@ def local_completion(base_directory):
     :return: A list of all the files and folders in the current "path".
     """
     candidates = set()
-    candidates.update(os.listdir(base_directory if base_directory else "."))
+    if base_directory:
+        base_directory = os.path.expanduser(base_directory)
+    for f in os.listdir(base_directory if base_directory else "."):
+        if os.path.isdir(os.path.join(base_directory, f)):
+            candidates.add(f + "/")  # Add a trailing slash to directories
+        else:
+            candidates.add(f)
 
     # Also search the PATH if it makes sense in the context:
     if not base_directory:

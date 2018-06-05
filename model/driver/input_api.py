@@ -127,3 +127,14 @@ def file_exists(path):
     """
     output = shell_exec("test -f %s ; echo $?" % path)
     return int(output) == 0
+
+# -----------------------------------------------------------------------------
+
+def is_directory(path):
+    """
+    Tests whether a given file is a directory.
+    :param path: The path to test
+    :return: True if the file is a directory.
+    """
+    output = shell_exec("test -d %s ; echo $?" % path)
+    return int(output) == 0

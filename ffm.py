@@ -34,7 +34,7 @@ import model.context as context
 from model.driver.input import DefaultInputDriver
 from model.session import Session
 
-PROMPT_REGEXP = r"^\[?\w+@\w+[: ][/~].*[$#] $|^\$ $"
+PROMPT_REGEXP = r"^\[?[\w-]+@[\w-]+[: ][/~].*[$#] $|^\$ $|^[A-Za-z ]+> $"
 
 # -----------------------------------------------------------------------------
 

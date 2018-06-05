@@ -28,15 +28,21 @@ class Upload(Command):
     def __init__(self, *args, **kwargs):
         if len(args) < 3:
             raise RuntimeError("Received %d argument(s), expected 3." % len(args))
-        if not os.path.exists(args[1]):
-            raise RuntimeError("%s not found!" % args[1])
+
+        self.target_file = os.path.expanduser(args[1])
+        self.destination = args[2]
+
+        if not os.path.exists(self.target_file):
+            raise RuntimeError("%s not found!" % self.target_file)
+        if os.path.isdir(self.target_file):
+            raise RuntimeError("%s is a directory!" % self.target_file)
+
+        if is_directory(self.destination):
+            self.destination = os.path.join(self.destination, os.path.basename(self.target_file))
 
         # Abort if there is already a file with this name.
-        if file_exists(args[2]):
+        if file_exists(self.destination):
             raise RuntimeError("%s already exists! Aborting." % args[2])
-
-        self.target_file = args[1]
-        self.destination = args[2]
 
     @staticmethod
     def regexp():
@@ -68,7 +74,7 @@ class Upload(Command):
                     contents = f.read(2048)
         md5sum = md5.hexdigest()
         remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % self.destination)
-        write_str("Local MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
+        write_str("\rLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
 
 
 register_plugin(Upload)
