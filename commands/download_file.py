@@ -18,7 +18,7 @@ import hashlib
 import re
 import tqdm
 
-from model.command.command import Command
+from model.plugin.command import Command
 from model.driver.input_api import *
 from commands.command_manager import register_plugin
 

@@ -80,7 +80,8 @@ def _read_all_output():
         os.write(context.active_session.master, ("echo -n %s\r" % MARKER_STR).encode("UTF-8"))
     while not output.endswith(end_marker):
         # TODO: Check for timeouts here
-        output += os.read(context.active_session.master, 4096)
+        data = os.read(context.active_session.master, 4096)
+        output += data
     # The last line of the output should be a new prompt or the marker. Exclude it from
     # the output.
     index = output.rfind(b"\r\n")

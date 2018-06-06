@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from model.driver.input_api import *
-from model.command.command import Command
+from model.plugin.command import Command
 from commands.command_manager import register_plugin
 import os
 

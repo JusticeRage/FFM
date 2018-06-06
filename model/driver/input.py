@@ -16,6 +16,7 @@
 """
 
 from commands.command_manager import parse_commands
+from processors.processor_manager import apply_input_processors
 import model.ansi as ansi
 from misc.pretty_printing import print_columns
 from misc.stringutils import *
@@ -80,7 +81,6 @@ class DefaultInputDriver(BaseDriver):
             self.state = self._state_escape
             self._state_entry_clear()
         elif c == 0x02:
-            # TODO: TEST COMMAND, DELETE
             pass
         else:
             self.state(c)
@@ -576,8 +576,12 @@ class DefaultInputDriver(BaseDriver):
                 self.draw_current_line()
             else:
                 # No command detected: forward the input to the TTY.
-                os.write(context.active_session.master, self.input_buffer.encode('UTF-8') + b'\r')
-                self.input_buffer = ""
+                (proceed, command_line) = apply_input_processors(self.input_buffer)
+                if proceed:  # Ignore the command line if one of the processors returned CANCEL.
+                    os.write(context.active_session.master, command_line.encode('UTF-8') + b'\r')
+                    self.input_buffer = ""
+                else:
+                    self.draw_current_line()
             self.cursor_position = 0
         # ^U: clear line up to the cursor.
         elif c == 0x15:

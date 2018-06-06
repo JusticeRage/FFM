@@ -15,11 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import abc
 import glob
 import os
 import re
-from model.command.command import Command
+from model.plugin.command import Command
 from model.driver.input_api import write_str, LogLevel
 
 COMMAND_LIST = set()

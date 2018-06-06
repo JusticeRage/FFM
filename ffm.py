@@ -34,7 +34,7 @@ import model.context as context
 from model.driver.input import DefaultInputDriver
 from model.session import Session
 
-PROMPT_REGEXP = r"^\[?[\w-]+@[\w-]+[: ][/~].*[$#] $|^\$ $|^[A-Za-z ]+> $"
+PROMPT_REGEXP = r"^(\[?[\w-]+@[\w-]+[: ][/~].*)?[$#>] $|^[A-Za-z ]+> $"
 
 # -----------------------------------------------------------------------------
 
@@ -92,16 +92,21 @@ def main():
                     if context.debug_output:
                         for c in read:
                             os.write(sys.stdout.fileno(), ("%02X " % c).encode("UTF-8"))
-                    # Store the last line for future use # TODO: NOT PORTABLE!
-                    # This is motivated by my Debian shell's prompt containing weird \x07 bytes separating
-                    # two prompt occurrences.
-                    if len(read) < 150 and b"\x07" in read:  # TODO: bug when cat-ing a binary file!
-                        context.active_session.input_driver.last_line = read.split(b"\x07")[-1].decode("UTF-8", errors='ignore')
-                    elif re.match(PROMPT_REGEXP, read.decode("UTF-8", errors='ignore'), re.UNICODE):
-                        context.active_session.input_driver.last_line = read.decode("UTF-8")
+
+                    # Store the last line for future use
+                    # Only work on the last line
+                    last = read.split(b"\n")[-1]
+                    if len(last) < 150 and b"\x07" in last:  # TODO: bug when cat-ing a binary file!
+                        # This is motivated by my Debian shell's prompt containing weird \x07 bytes separating
+                        # two prompt occurrences.
+                        context.active_session.input_driver.last_line = last.split(b"\x07")[-1].decode("UTF-8", errors='ignore')
+                    elif re.match(PROMPT_REGEXP, last.decode("UTF-8", errors='ignore'), re.UNICODE):
+                        context.active_session.input_driver.last_line = last.decode("UTF-8")
                     else:
                         context.active_session.input_driver.last_line = ''
+
                     # Pass the output to the output driver for display.
+                    # TODO: apply post-processors
                     context.active_session.output_driver.handle_bytes(read)
             except select.error as e:
                 if "[Errno 4]" in str(e):  # Interrupted system call. May be raised if SIGWINCH is received.

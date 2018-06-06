@@ -16,6 +16,7 @@
 """
 
 from model.driver.input_api import *
+from commands.command_manager import COMMAND_LIST
 
 def complete(current_word, candidates):
     """
@@ -69,6 +70,10 @@ def remote_completion(base_directory):
                              "`echo $PATH |tr ':' ' '` |grep -ve ':$\|^$' |sort -u "
                              "2>/dev/null" % context.window_size[1])
 
+    # Add plugins if needed
+    if not base_directory:
+        output += "\r\n" + "\r\n".join(p.name() for p in COMMAND_LIST)
+
     return sorted(output.split("\r\n"))
 
 # -----------------------------------------------------------------------------
@@ -85,7 +90,7 @@ def local_completion(base_directory):
     if base_directory:
         base_directory = os.path.expanduser(base_directory)
     for f in os.listdir(base_directory if base_directory else "."):
-        if os.path.isdir(os.path.join(base_directory, f)):
+        if os.path.isdir(os.path.join(base_directory if base_directory else ".", f)):
             candidates.add(f + "/")  # Add a trailing slash to directories
         else:
             candidates.add(f)
@@ -99,4 +104,9 @@ def local_completion(base_directory):
         for p in path.split(":"):
             if p:
                 candidates.update(os.listdir(p))
+
+    # Add plugins if needed
+    if not base_directory:
+        candidates.update(p.name() for p in COMMAND_LIST)
+
     return sorted(candidates)

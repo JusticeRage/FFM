@@ -14,7 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from model.command.command import Command
+from model.plugin.command import Command
 from model.driver.input_api import *
 from commands.command_manager import register_plugin
 import base64

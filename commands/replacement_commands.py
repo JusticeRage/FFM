@@ -17,7 +17,7 @@
 
 import time
 from commands.command_manager import register_plugin
-from model.command.command import Command
+from model.plugin.command import Command
 from model.driver.input_api import *
 
 # -----------------------------------------------------------------------------
@@ -49,7 +49,7 @@ class PtySpawn(Command):
 
     @staticmethod
     def regexp():
-        return r"^\s*!pty\s+"
+        return r"^\s*!pty\s*"
 
     @staticmethod
     def name():
@@ -60,7 +60,7 @@ class PtySpawn(Command):
         return "Spawns a PTY in the current shell."
 
     def execute(self):
-        if context.active_session.input_driver.last_line is not None:
+        if context.active_session.input_driver.last_line:
             raise RuntimeError("A TTY already seems to be present.")
 
         pass_command("python -c 'import pty; pty.spawn(\"/bin/sh\")'")
