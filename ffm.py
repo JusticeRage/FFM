@@ -68,6 +68,7 @@ def main():
 
     # Print the banner
     print(random.choice(BANNERS) + "\n")
+    print("FFM enabled. Type !list to see available commands and exit to quit.")
 
     context.terminal_driver = DefaultInputDriver()
     stdin_fd = sys.stdin.fileno()

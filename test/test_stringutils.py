@@ -17,7 +17,7 @@
 """
 
 import unittest
-from misc.stringutils import *
+from misc.string_utils import *
 
 
 class TestStringUtils(unittest.TestCase):
@@ -53,3 +53,23 @@ class TestStringUtils(unittest.TestCase):
         self.assertEqual(get_last_word("one two three "), "")
         self.assertEqual(get_last_word(""), "")
         self.assertEqual(get_last_word("/tm", boundary="/"), "tm")
+
+    def test_strip(self):
+        self.assertEqual(strip("abcd", ["a", "d"]), "bc")
+        self.assertEqual(strip("abcd", ["a", "c"]), "bcd")
+        self.assertEqual(strip("abcd", ["efgh"]), "abcd")
+        self.assertEqual(strip("", ["ad", "bc"]), "")
+        self.assertEqual(strip("abcd", ["abc"]), "d")
+        self.assertEqual(strip("abcdefgh", ["efgh"]), "abcd")
+        self.assertEqual(strip("abcdefgh", ["abcd", "efgh"]), "")
+        self.assertEqual(strip("|less&&", ["|", ";", "&&", "&", "`"]), "less")
+        # Warning: strings are evaluated in the order they are given:
+        self.assertEqual(strip("abcdefgh", ["ef", "gh"]), "abcdef")
+        self.assertEqual(strip("abcdefgh", ["gh", "ef"]), "abcd")
+
+    def test_get_commands(self):
+        self.assertEqual(get_commands("ls -a -l -h"), ["ls"])
+        self.assertEqual(get_commands("cat -a |less"), ["cat", "less"])
+        self.assertEqual(get_commands("command1&&command2;command3"), ["command1", "command2", "command3"])
+        self.assertEqual(get_commands("command1&& command2; command3 &"), ["command1", "command2", "command3"])
+        self.assertEqual(get_commands("ls `echo -l` -a| less"), ["ls", "echo", "less"])

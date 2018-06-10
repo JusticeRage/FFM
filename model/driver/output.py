@@ -67,14 +67,13 @@ class DefaultOutputDriver(BaseDriver):
             # Switch the driver to passthrough mode.
             self._saved_driver = context.active_session.input_driver
             context.active_session.input_driver = PassthroughDriver()
-            #context.active_session.input_driver.handle_bytes(("\x1B\x5B\x3F%s\x68" % self._parameters).encode('ascii'))
             self._state = None
         elif c == 0x6C and (self._parameters == "1049"):
             # Exit alternate screen, restore the driver.
-            #context.active_session.input_driver.handle_bytes(("\x1B\x5B\x3F%s\x6C" % self._parameters).encode('ascii'))
             context.active_session.input_driver = self._saved_driver
             self._saved_driver = None
             self._state = None
         else:
+            # write_str("Discarded a sequence: 1B 5B 3F \"%s\" %02X" % (self._parameters, c), LogLevel.WARNING)
             os.write(context.stdout.fileno(), ("\x1B\x5B\x3F" + self._parameters + chr(c)).encode("ascii"))
             self._state = None

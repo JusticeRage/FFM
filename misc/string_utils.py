@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import re
 
 # Not alphanum in the strictest sense. This list is used to figure out where the cursor
 # should jump to when the user presses ^Left or ^Right. There are probably characters
@@ -98,3 +99,63 @@ def get_last_word(s, boundary=' '):
         return s[index+1:]
     else:
         return s
+
+# -----------------------------------------------------------------------------
+
+def strip(s, strings):
+    """
+    Standard strip function, but for whole strings instead of chars.
+    Note that the strings are each evaluated in order and only tested once.
+    :param s: The string to strip.
+    :param strings: The strings to remove (both at the front and at the end).
+    :return: The stripped string.
+    """
+    if not strings or not s:
+        return s
+    for str in strings:
+        if len(s) == 1:
+            s.strip(str)
+        else:
+            if s.startswith(str):
+                s = s[len(str):]
+            if s.endswith(str):
+                s = s[:-len(str)]
+    return s
+
+# -----------------------------------------------------------------------------
+
+def get_commands(command_line, separators=("|", ";", "&&", "&")):
+    """
+    This function splits a command line to return a list of invoked programs
+    without their arguments.
+    Example: "cat file ; echo "aaa" | less" -> ["cat", "echo", "less"]
+    :param command_line: The command line to parse.
+    :param separators: The separators that are used to delimit commands.
+    "`" is excluded from the default list because in the case of
+    "ls `echo -l` -a", items placed after the second ̀ may be other arguments.
+    Instead it is handled separately.
+    :return: A list of commands contained in the command line
+    """
+    # Normalize the string. We want to add spaces around separators in case
+    # we receive input such as "command1&&command2;command3".
+    for s in separators:
+        command_line = re.sub(r'%s' % re.escape(s), " %s " % s, command_line)
+
+    tokens = command_line.split()
+
+    # Figure out which tokens are commands and which ones are arguments. We assume that the
+    # commands are the first token and all the ones located after a separator.
+    commands = [tokens[0]]
+    if len(tokens) == 1:
+        return commands
+    for i in range(1, len(tokens)):
+        if tokens[i].startswith("`"):
+            commands.append(tokens[i].strip("`"))
+        for s in separators:
+            if s == tokens[i] and i < len(tokens) - 1 and not tokens[i+1] in separators:
+                # The current token is a separator
+                commands.append(tokens[i+1])
+                i += 1  # Skip the next token as it was already added
+                break   # No need to test for other separators, we found one.
+
+    return commands

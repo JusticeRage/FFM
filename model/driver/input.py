@@ -19,7 +19,7 @@ from commands.command_manager import parse_commands
 from processors.processor_manager import apply_input_processors
 import model.ansi as ansi
 from misc.pretty_printing import print_columns
-from misc.stringutils import *
+from misc.string_utils import *
 from misc.tab_completion import complete, remote_completion, local_completion
 from model.driver.base import BaseDriver
 from model.driver.input_api import *
@@ -624,7 +624,7 @@ class DefaultInputDriver(BaseDriver):
 
     def _state_escape(self, c):
         if 0x00 <= c <= 0x17 or c == 0x19 or 0x1C <= c <= 0x1F:
-            raise RuntimeError("Not implemented (to handle here)! (Everywhere, 0x%02X)" % c)
+            raise RuntimeError("Not implemented (to handle here)! (Escape, 0x%02X)" % c)
         elif c == 0x7F:  # Ignore
             return
         elif c == 0x5B:
@@ -650,7 +650,7 @@ class DefaultInputDriver(BaseDriver):
             self.go_to_sol()
             self.state = self._state_ground
         else:
-            raise RuntimeError("Not implemented! (Escape, 0x%02X)" % c)
+            raise RuntimeError("Not implemented! (Escape intermediate, 0x%02X)" % c)
 
     # -----------------------------------------------------------------------------
 
