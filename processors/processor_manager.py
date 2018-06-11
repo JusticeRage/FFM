@@ -44,10 +44,12 @@ def register_processor(plugin):
 
 # -----------------------------------------------------------------------------
 
-def apply_input_processors(user_input):
+def apply_processors(user_input, processors):
     """
     Applies the input processor to the command line which was typed by a user.
     :param user_input: The command line that is about to be passed to the shell.
+    :param processors: A list of processors to apply. Usually INPUT_PROCESSOR_LIST
+    or OUTPUT_PROCESSOR_LIST.
     :return: Whether the command line should be passed to the underlying shell,
     and the processed command line.
     """
@@ -55,7 +57,7 @@ def apply_input_processors(user_input):
         return True, user_input
 
     command_line = user_input
-    for p in INPUT_PROCESSOR_LIST:
+    for p in processors:
         processor_instance = p()
         action, command_line = processor_instance.apply(command_line)
         if action == ProcessorAction.FORWARD:

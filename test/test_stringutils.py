@@ -73,3 +73,9 @@ class TestStringUtils(unittest.TestCase):
         self.assertEqual(get_commands("command1&&command2;command3"), ["command1", "command2", "command3"])
         self.assertEqual(get_commands("command1&& command2; command3 &"), ["command1", "command2", "command3"])
         self.assertEqual(get_commands("ls `echo -l` -a| less"), ["ls", "echo", "less"])
+
+    def test_get_arguments(self):
+        self.assertEqual(get_arguments("ls -a -l -h ", "ls"), "-a -l -h")
+        self.assertEqual(get_arguments("cat -a |less", "cat"), "-a")
+        self.assertEqual(get_arguments("cat -a |less", "echo"), "")
+        self.assertEqual(get_arguments("command1&&command2;command3", "command2"), "")

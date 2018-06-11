@@ -16,7 +16,7 @@
 """
 
 from commands.command_manager import parse_commands
-from processors.processor_manager import apply_input_processors
+from processors.processor_manager import apply_processors, INPUT_PROCESSOR_LIST
 import model.ansi as ansi
 from misc.pretty_printing import print_columns
 from misc.string_utils import *
@@ -576,7 +576,7 @@ class DefaultInputDriver(BaseDriver):
                 self.draw_current_line()
             else:
                 # No command detected: forward the input to the TTY.
-                (proceed, command_line) = apply_input_processors(self.input_buffer)
+                (proceed, command_line) = apply_processors(self.input_buffer, INPUT_PROCESSOR_LIST)
                 if proceed:  # Ignore the command line if one of the processors returned CANCEL.
                     os.write(context.active_session.master, command_line.encode('UTF-8') + b'\r')
                     self.input_buffer = ""

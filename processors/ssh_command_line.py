@@ -18,7 +18,7 @@ import re
 from model.plugin.processor import Processor, ProcessorType, ProcessorAction
 from processors.processor_manager import register_processor
 from model.driver.input_api import write_str, LogLevel
-from misc.string_utils import find_first_of
+from misc.string_utils import find_first_of, get_arguments
 
 class SSHOptions(Processor):
     """
@@ -31,11 +31,7 @@ class SSHOptions(Processor):
         if "ssh " not in user_input:
             return ProcessorAction.FORWARD, user_input
 
-        # TODO: move to a separate function, split_command
-        ssh_cmdline = user_input[user_input.find("ssh"):]
-        pos = find_first_of(ssh_cmdline, ("|;&"))
-        if pos != -1:
-            ssh_cmdline = ssh_cmdline[:pos]
+        ssh_cmdline = get_arguments(user_input, "ssh")
         if not re.search(r'\-[a-zA-Z]*T', ssh_cmdline):  # Check if the -T option is present
             write_str("Notice: automatically adding the -T option to the ssh command!\r\n", LogLevel.WARNING)
             return ProcessorAction.FORWARD, (user_input.replace("ssh", "ssh -T"))

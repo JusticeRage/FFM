@@ -159,3 +159,28 @@ def get_commands(command_line, separators=("|", ";", "&&", "&")):
                 break   # No need to test for other separators, we found one.
 
     return commands
+
+# -----------------------------------------------------------------------------
+
+def get_arguments(user_input, command):
+    """
+    This function is used to retrieve the arguments of a specific command in
+    a command line. This can be useful if the command line is composed of
+    several commands, such as "command1 -A -B ; command2 -C | less". In which
+    case, get_arguments can return either "-A -B", "-C" or "" depending
+    on the command we're interested in.
+    Note that this function will fail if the same command is present multiple
+    times in the input (only the first occurrence will be used).
+
+    :param user_input: The command line to parse.
+    :param command: The command whose arguments we are interested in.
+    :return: A list of arguments that the user is passing to the command.
+    """
+    cmd_pos = user_input.find(command)
+    if cmd_pos == -1:
+        return ""
+    cmdline = user_input[cmd_pos + len(command):]
+    pos = find_first_of(cmdline, ("|;&"))
+    if pos != -1:
+        cmdline = cmdline[:pos]
+    return cmdline.strip()

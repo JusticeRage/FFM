@@ -33,6 +33,7 @@ from misc.banners import BANNERS
 import model.context as context
 from model.driver.input import DefaultInputDriver
 from model.session import Session
+from processors.processor_manager import apply_processors, OUTPUT_PROCESSOR_LIST
 
 PROMPT_REGEXP = r"^(\[?[\w-]+@[\w-]+[: ][/~].*)?[$#>] $|^[A-Za-z ]+> $"
 
@@ -87,12 +88,15 @@ def main():
                 r, w, e = select.select([sys.stdin, context.active_session.master], [], [], 1)
                 if sys.stdin in r:
                     typed_char = os.read(sys.stdin.fileno(), 1)
-                    context.active_session.input_driver.handle_input(typed_char)
+                    try:
+                        context.active_session.input_driver.handle_input(typed_char)
+                    except RuntimeError as e:
+                        os.write(context.stdout.fileno(), b"\r\n%s\r\n" % str(e).encode("UTF-8"))
                 elif context.active_session.master in r:
                     read = os.read(context.active_session.master, 2048)
                     if context.debug_output:
                         for c in read:
-                            os.write(sys.stdout.fileno(), ("%02X " % c).encode("UTF-8"))
+                            os.write(context.stdout.fileno(), ("%02X " % c).encode("UTF-8"))
 
                     # Store the last line for future use
                     # Only work on the last line
@@ -106,9 +110,10 @@ def main():
                     else:
                         context.active_session.input_driver.last_line = ''
 
-                    # Pass the output to the output driver for display.
-                    # TODO: apply post-processors
-                    context.active_session.output_driver.handle_bytes(read)
+                    # Pass the output to the output driver for display after applying output processors.
+                    (proceed, output) = apply_processors(read, OUTPUT_PROCESSOR_LIST)
+                    if proceed:
+                        context.active_session.output_driver.handle_bytes(output)
             except select.error as e:
                 if "[Errno 4]" in str(e):  # Interrupted system call. May be raised if SIGWINCH is received.
                     continue
