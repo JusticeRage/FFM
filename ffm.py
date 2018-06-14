@@ -35,7 +35,10 @@ from model.driver.input import DefaultInputDriver
 from model.session import Session
 from processors.processor_manager import apply_processors, OUTPUT_PROCESSOR_LIST
 
-PROMPT_REGEXP = r"^(\[?[\w-]+@[\w-]+[: ][/~].*)?[$#>] $|^[A-Za-z ]+> $"
+# (\[?[\w-]+@[\w-]+[: ][/~].*)? [$#>] $ --> Prompts such as [user@machine ~]$
+#                                           or user@machine:~/folder$
+# ^[A-Za-z0-9 .-]+[>$#] $               --> Prompts like sh-4.2$
+PROMPT_REGEXP = r"^(\[?[\w-]+@[\w-]+[: ][/~].*)?[$#>] $|^[A-Za-z0-9 .-]+[>$#] $"
 
 # -----------------------------------------------------------------------------
 

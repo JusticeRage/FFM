@@ -139,3 +139,14 @@ def is_directory(path):
     """
     output = shell_exec("test -d %s ; echo $?" % path)
     return int(output) == 0
+
+# -----------------------------------------------------------------------------
+
+def check_command_existence(cmd):
+    """
+    Verifies that a given command exists on the machine.
+    :param cmd: The command whose existence we want to check.
+    :return: True if the command is present on the system, False otherwise.
+    """
+    output = shell_exec("command -v %s >/dev/null ; echo $?" % cmd)
+    return int(output) == 0

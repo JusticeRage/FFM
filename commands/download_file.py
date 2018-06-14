@@ -35,6 +35,10 @@ class Download(Command):
         if os.path.exists(self.destination):
             raise RuntimeError("%s already exists! Aborting." % self.destination)
 
+        if not check_command_existence("xxd"):
+            # Todo: implement using od.
+            raise RuntimeError("xxd is not available! Aborting.")
+
         if not file_exists(args[1]):
             raise RuntimeError("%s not found!" % args[1])
         self.target_file = args[1]
@@ -72,7 +76,7 @@ class Download(Command):
                     f.write(data)
         md5sum = md5.hexdigest()
         remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % self.target_file)
-        write_str("Local MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
+        write_str("\r\nLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
 
 
 register_plugin(Download)
