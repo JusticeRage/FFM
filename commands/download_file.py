@@ -14,14 +14,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
+# Standard library imports
 import hashlib
 import re
+
+# Third party library imports
 import tqdm
 
+# Own library
 from model.plugin.command import Command
 from model.driver.input_api import *
 from commands.command_manager import register_plugin
-
 
 class Download(Command):
     def __init__(self, *args, **kwargs):
@@ -35,9 +39,8 @@ class Download(Command):
         if os.path.exists(self.destination):
             raise RuntimeError("%s already exists! Aborting." % self.destination)
 
-        if not check_command_existence("xxd"):
-            # Todo: implement using od.
-            raise RuntimeError("xxd is not available! Aborting.")
+        if not check_command_existence("xxd") or not check_command_existence("od"):
+            raise RuntimeError("xxd or od are not available! Aborting.")
 
         if not file_exists(args[1]):
             raise RuntimeError("%s not found!" % args[1])
@@ -49,7 +52,7 @@ class Download(Command):
 
     @staticmethod
     def usage():
-        write_str("Usage: !upload [local file] [remote destination]\r\n", LogLevel.WARNING)
+        write_str("Usage: !download [local file] [remote destination]\r\n", LogLevel.WARNING)
 
     @staticmethod
     def name():
@@ -67,7 +70,10 @@ class Download(Command):
             with tqdm.tqdm(total=file_size, unit="o", unit_scale=True) as progress_bar:
                 while bytes_read < file_size:
                     chunk_size = min(2048, file_size - bytes_read)
-                    data = shell_exec("xxd -p -l%d -s%d %s" % (chunk_size, bytes_read, self.target_file), False)
+                    if check_command_existence("xxd"):
+                        data = shell_exec("xxd -p -l%d -s%d %s" % (chunk_size, bytes_read, self.target_file), False)
+                    else:
+                        data = shell_exec("od -t x1 %s | awk '{$1=\"\"; print $0}'" % self.target_file, False)
                     data = re.sub(r"\r|\n|\r\n", "", data)  # Strip newlines from xxd output.
                     data = bytearray.fromhex(data)
                     progress_bar.update(chunk_size)
