@@ -39,7 +39,7 @@ class Download(Command):
         if os.path.exists(self.destination):
             raise RuntimeError("%s already exists! Aborting." % self.destination)
 
-        if not check_command_existence("xxd") or not check_command_existence("od"):
+        if not check_command_existence("xxd") and not check_command_existence("od"):
             raise RuntimeError("xxd or od are not available! Aborting.")
 
         if not file_exists(args[1]):
@@ -52,7 +52,7 @@ class Download(Command):
 
     @staticmethod
     def usage():
-        write_str("Usage: !download [local file] [remote destination]\r\n", LogLevel.WARNING)
+        write_str("Usage: !download [remote file] [local path]\r\n", LogLevel.WARNING)
 
     @staticmethod
     def name():
@@ -74,7 +74,7 @@ class Download(Command):
                         data = shell_exec("xxd -p -l%d -s%d %s" % (chunk_size, bytes_read, self.target_file), False)
                     else:
                         data = shell_exec("od -t x1 %s | awk '{$1=\"\"; print $0}'" % self.target_file, False)
-                    data = re.sub(r"\r|\n|\r\n", "", data)  # Strip newlines from xxd output.
+                    data = re.sub(r"\r|\n|\r\n", "", data)  # Strip newlines from output.
                     data = bytearray.fromhex(data)
                     progress_bar.update(chunk_size)
                     bytes_read += chunk_size
