@@ -47,8 +47,7 @@ error checking is required but it's another plugin you can easily read to get st
 You can find it in `commands/download_file.py`. Note that it requires `xxd` or `od` on the remote
 machine to function properly.
 * `!upload [local file] [remote path]` works exactly the same as the previous command, 
-except that a local file is put on the remote machine. It requires `xxd`, and the utility is not present by default on CentOS. Expect
-the plugin to be rewritten with `od` in the near future.
+except that a local file is put on the remote machine.
 * `!pty` spawns a TTY, which is something you don't want in most cases because it tends to 
 leave forensics evidence. However, some commands (`sudo`) or exploits require a TTY to run
 in so this is provided as a convenience. `UNSET HISTFILE` is passed to it as soon as it

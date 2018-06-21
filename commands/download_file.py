@@ -69,11 +69,11 @@ class Download(Command):
         with open(self.destination, 'wb') as f:
             with tqdm.tqdm(total=file_size, unit="o", unit_scale=True) as progress_bar:
                 while bytes_read < file_size:
-                    chunk_size = min(2048, file_size - bytes_read)
+                    chunk_size = min(4096, file_size - bytes_read)
                     if check_command_existence("xxd"):
                         data = shell_exec("xxd -p -l%d -s%d %s" % (chunk_size, bytes_read, self.target_file), False)
                     else:
-                        data = shell_exec("od -t x1 %s | awk '{$1=\"\"; print $0}'" % self.target_file, False)
+                        data = shell_exec("od -vt x1 -N%d -j%d %s | awk '{$1=\"\"; print $0}'" % (chunk_size, bytes_read, self.target_file), False)
                     data = re.sub(r"\r|\n|\r\n", "", data)  # Strip newlines from output.
                     data = bytearray.fromhex(data)
                     progress_bar.update(chunk_size)
@@ -82,7 +82,7 @@ class Download(Command):
                     f.write(data)
         md5sum = md5.hexdigest()
         remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % self.target_file)
-        write_str("\r\nLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
+        write_str("\rLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
 
 
 register_plugin(Download)
