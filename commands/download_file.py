@@ -14,14 +14,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
+# Standard library imports
 import hashlib
 import re
+
+# Third party library imports
 import tqdm
 
+# Own library
 from model.plugin.command import Command
 from model.driver.input_api import *
 from commands.command_manager import register_plugin
-
 
 class Download(Command):
     def __init__(self, *args, **kwargs):
@@ -35,9 +39,8 @@ class Download(Command):
         if os.path.exists(self.destination):
             raise RuntimeError("%s already exists! Aborting." % self.destination)
 
-        if not check_command_existence("xxd"):
-            # Todo: implement using od.
-            raise RuntimeError("xxd is not available! Aborting.")
+        if not check_command_existence("xxd") and not check_command_existence("od"):
+            raise RuntimeError("xxd or od are not available! Aborting.")
 
         if not file_exists(args[1]):
             raise RuntimeError("%s not found!" % args[1])
@@ -49,7 +52,7 @@ class Download(Command):
 
     @staticmethod
     def usage():
-        write_str("Usage: !upload [local file] [remote destination]\r\n", LogLevel.WARNING)
+        write_str("Usage: !download [remote file] [local path]\r\n", LogLevel.WARNING)
 
     @staticmethod
     def name():
@@ -66,9 +69,12 @@ class Download(Command):
         with open(self.destination, 'wb') as f:
             with tqdm.tqdm(total=file_size, unit="o", unit_scale=True) as progress_bar:
                 while bytes_read < file_size:
-                    chunk_size = min(2048, file_size - bytes_read)
-                    data = shell_exec("xxd -p -l%d -s%d %s" % (chunk_size, bytes_read, self.target_file), False)
-                    data = re.sub(r"\r|\n|\r\n", "", data)  # Strip newlines from xxd output.
+                    chunk_size = min(4096, file_size - bytes_read)
+                    if check_command_existence("xxd"):
+                        data = shell_exec("xxd -p -l%d -s%d %s" % (chunk_size, bytes_read, self.target_file), False)
+                    else:
+                        data = shell_exec("od -vt x1 -N%d -j%d %s | awk '{$1=\"\"; print $0}'" % (chunk_size, bytes_read, self.target_file), False)
+                    data = re.sub(r"\r|\n|\r\n", "", data)  # Strip newlines from output.
                     data = bytearray.fromhex(data)
                     progress_bar.update(chunk_size)
                     bytes_read += chunk_size
@@ -76,7 +82,7 @@ class Download(Command):
                     f.write(data)
         md5sum = md5.hexdigest()
         remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % self.target_file)
-        write_str("\r\nLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
+        write_str("\rLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
 
 
 register_plugin(Download)
