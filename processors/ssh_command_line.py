@@ -18,7 +18,7 @@ import re
 from model.plugin.processor import Processor, ProcessorType, ProcessorAction
 from processors.processor_manager import register_processor
 from model.driver.input_api import write_str, LogLevel
-from misc.string_utils import find_first_of, get_arguments
+from misc.string_utils import get_commands, get_arguments
 
 class SSHOptions(Processor):
     """
@@ -28,7 +28,7 @@ class SSHOptions(Processor):
     """
 
     def apply(self, user_input):
-        if "ssh " not in user_input:
+        if "ssh" not in get_commands(user_input):
             return ProcessorAction.FORWARD, user_input
 
         ssh_cmdline = get_arguments(user_input, "ssh")

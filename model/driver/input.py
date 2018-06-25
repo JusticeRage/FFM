@@ -536,8 +536,16 @@ class DefaultInputDriver(BaseDriver):
                 self.go_to_sol()
         # ^C or ^D: forward to the underlying TTY, empty the current buffer.
         elif c == 0x03 or c == 0x04:
-            self.input_buffer = ""
-            os.write(context.active_session.master, bytes([c]))
+            # If the user is connected to a shell with no TTY, ask for confirmation to avoid
+            # terminating it.
+            if c == 0x03 and self.last_line == "":
+                write_str("\rWarning: ^C may terminate the current shell! Please confirm by "
+                          "sending it again.\r\n", LogLevel.WARNING)
+                self.draw_current_line()
+                self.state = self._state_confirm_sigint
+            else:
+                self.input_buffer = ""
+                os.write(context.active_session.master, bytes([c]))
         # ^E: go to the end of the line.
         elif c == 0x05:
             if self.cursor_position != 0:
@@ -745,6 +753,24 @@ class DefaultInputDriver(BaseDriver):
         else:
             # No second tab: fall back to the Ground state parsing.
             self.state = self._state_ground
+            self._state_ground(c)
+
+    # -----------------------------------------------------------------------------
+
+    def _state_confirm_sigint(self, c):
+        """
+        This state is used to make the user confirm ^C when they are connected to a
+        shell that might be terminated by it. It is *not* represented in the state
+        machine diagram on which this code is based, and should therefore not be
+        considered authoritative parsing!
+        :param c: The new byte received.
+        :return:
+        """
+        self.state = self._state_ground
+        if c == 0x03:
+            self.input_buffer = ""
+            os.write(context.active_session.master, bytes([c]))
+        else:  # Not ^C: go back to the original state and ignore the previous ^C.
             self._state_ground(c)
 
     # -----------------------------------------------------------------------------
