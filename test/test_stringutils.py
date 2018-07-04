@@ -73,6 +73,7 @@ class TestStringUtils(unittest.TestCase):
         self.assertEqual(get_commands("command1&&command2;command3"), ["command1", "command2", "command3"])
         self.assertEqual(get_commands("command1&& command2; command3 &"), ["command1", "command2", "command3"])
         self.assertEqual(get_commands("ls `echo -l` -a| less"), ["ls", "echo", "less"])
+        self.assertEqual(get_commands("torify nc -vv target |grep -v word", separators=("|", "torify", ";")), ["nc", "grep"])
 
     def test_get_arguments(self):
         self.assertEqual(get_arguments("ls -a -l -h ", "ls"), "-a -l -h")

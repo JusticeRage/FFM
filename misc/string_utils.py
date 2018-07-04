@@ -124,7 +124,9 @@ def strip(s, strings):
 
 # -----------------------------------------------------------------------------
 
-def get_commands(command_line, separators=("|", ";", "&&", "&")):
+CMDLINE_SEPARATORS = ("|", ";", "&&", "&")
+
+def get_commands(command_line, separators=CMDLINE_SEPARATORS):
     """
     This function splits a command line to return a list of invoked programs
     without their arguments.
@@ -142,6 +144,10 @@ def get_commands(command_line, separators=("|", ";", "&&", "&")):
         command_line = re.sub(r'%s' % re.escape(s), " %s " % s, command_line)
 
     tokens = command_line.split()
+
+    # Skip any separator which may be prepended to the command
+    while tokens[0] in separators:
+        tokens.pop(0)
 
     # Figure out which tokens are commands and which ones are arguments. We assume that the
     # commands are the first token and all the ones located after a separator.

@@ -14,11 +14,14 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import re
 from model.plugin.processor import Processor, ProcessorType, ProcessorAction
 from processors.processor_manager import register_processor
 from model.driver.input_api import write_str, LogLevel
-from misc.string_utils import get_commands, get_arguments
+from misc.string_utils import get_commands, get_arguments, CMDLINE_SEPARATORS
+
+from processors.assert_torify import AssertTorify
 
 class SSHOptions(Processor):
     """
@@ -28,13 +31,15 @@ class SSHOptions(Processor):
     """
 
     def apply(self, user_input):
-        if "ssh" not in get_commands(user_input):
+        # Add the proxy commands to the tokens: torify ssh is considered to be an SSH call.
+        separators = CMDLINE_SEPARATORS + tuple(AssertTorify.PROXY_COMMANDS)
+        if "ssh" not in get_commands(user_input, separators=separators):
             return ProcessorAction.FORWARD, user_input
 
         ssh_cmdline = get_arguments(user_input, "ssh")
         if not re.search(r'\-[a-zA-Z]*T', ssh_cmdline):  # Check if the -T option is present
             write_str("Notice: automatically adding the -T option to the ssh command!\r\n", LogLevel.WARNING)
-            return ProcessorAction.FORWARD, (user_input.replace("ssh", "ssh -T"))
+            return ProcessorAction.FORWARD, (user_input.replace(ssh_cmdline, "%s %s" % (ssh_cmdline, "-T"), 1))
         return ProcessorAction.FORWARD, user_input
 
     @staticmethod
