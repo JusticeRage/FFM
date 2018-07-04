@@ -36,9 +36,13 @@ def register_processor(plugin):
         write_str("The processor's type (%s) is unsupported." % plugin.type())
         return
 
-    if plugin in destination:
-        write_str("Tried to register %s twice!\r\n" % str(plugin), LogLevel.ERROR)
-        return
+    # The plugin name needs to be checked on the class name, as the full path may vary
+    # depending on where the plugin is imported.
+    plugin_name = str(plugin).split(".")[-1]
+    for p in destination:
+        if str(p).split(".")[-1] == plugin_name:
+            write_str("Tried to register %s twice!\r\n" % str(plugin), LogLevel.ERROR)
+            return
     else:
         destination.add(plugin)
 
