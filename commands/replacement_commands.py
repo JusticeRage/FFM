@@ -63,11 +63,10 @@ class PtySpawn(Command):
         if context.active_session.input_driver.last_line:
             raise RuntimeError("A TTY already seems to be present.")
 
-        pass_command("python -c 'import pty; pty.spawn(\"/bin/sh\")'")
+        pass_command("script /dev/null")
         # Sleep a little bit to allow the pty to be created.
-        time.sleep(0.5)
-        pass_command("unset HISTFILE")
         time.sleep(0.2)
+        pass_command("unset HISTFILE")
         pass_command("stty -echo")
 
 # -----------------------------------------------------------------------------
