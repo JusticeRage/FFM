@@ -16,12 +16,12 @@
 """
 
 import re
+
+from model import context
 from model.plugin.processor import Processor, ProcessorType, ProcessorAction
 from processors.processor_manager import register_processor
 from model.driver.input_api import write_str, LogLevel
 from misc.string_utils import get_commands, get_arguments, CMDLINE_SEPARATORS
-
-from processors.assert_torify import AssertTorify
 
 class SSHOptions(Processor):
     """
@@ -32,7 +32,7 @@ class SSHOptions(Processor):
 
     def apply(self, user_input):
         # Add the proxy commands to the tokens: torify ssh is considered to be an SSH call.
-        separators = CMDLINE_SEPARATORS + tuple(AssertTorify.PROXY_COMMANDS)
+        separators = CMDLINE_SEPARATORS + tuple(context.config["AssertTorify"]["proxy_commands"].split())
         if "ssh" not in get_commands(user_input, separators=separators):
             return ProcessorAction.FORWARD, user_input
 

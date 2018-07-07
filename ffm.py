@@ -19,6 +19,7 @@
 
 import argparse
 import array
+import configparser
 import fcntl
 import os
 import random
@@ -64,6 +65,8 @@ def main():
     parser = argparse.ArgumentParser(description="Freedom Fighting Mode.")
     parser.add_argument("--debug-input", action="store_true", help="Toggle debugging of the user input.")
     parser.add_argument("--debug-output", action="store_true", help="Toggle debugging of the terminal output.")
+    parser.add_argument("--config", "-c", help="The harness' configuration file.",
+                        default=os.path.join(os.path.dirname(__file__), "ffm.conf"))
     parser.add_argument("--stdout", help="Redirect stdout to the target file.")
     args = parser.parse_args()
     context.debug_input = args.debug_input
@@ -73,6 +76,13 @@ def main():
     # Print the banner
     print(random.choice(BANNERS) + "\n")
     print("FFM enabled. Type !list to see available commands and exit to quit.")
+
+    # Check that the configuration file exists and is sane.
+    if not os.path.exists(args.config):
+        print("Could not find %s. Please provide it with the --config option." % args.config)
+        return
+    context.config = configparser.ConfigParser(allow_no_value=True, inline_comment_prefixes=("#", ";"))
+    context.config.read(args.config)
 
     context.terminal_driver = DefaultInputDriver()
     stdin_fd = sys.stdin.fileno()

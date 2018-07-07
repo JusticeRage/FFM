@@ -14,12 +14,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import configparser
+import os
 import unittest
 import model.driver.input_api as input_api
+import processors.assert_torify as assert_torify
+import processors.ssh_command_line as ssh_command_line
 
 class DummyContext:
     def __init__(self):
         self.stdout = open("/dev/null", "w")
+        self.config = configparser.ConfigParser(allow_no_value=True, inline_comment_prefixes=("#", ";"))
+        self.config.read(os.path.join(os.path.dirname(__file__), "../../ffm.conf"))
 
     def __del__(self):
         self.stdout.close()
@@ -31,7 +37,12 @@ class ProcessorUnitTest(unittest.TestCase):
     """
     def setUp(self):
         self.old_ctx = input_api.context
-        input_api.context = DummyContext()
+        dummy = DummyContext()
+        input_api.context = dummy
+        assert_torify.context = dummy
+        ssh_command_line.context = dummy
 
     def tearDown(self):
         input_api.context = self.old_ctx
+        assert_torify.context = self.old_ctx
+        ssh_command_line.context = self.old_ctx

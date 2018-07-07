@@ -21,6 +21,7 @@ debug_input = False
 debug_output = False
 stdout = None
 stdin = sys.stdin
+config = None
 
 active_session = None
 sessions = []

@@ -58,6 +58,8 @@ spawns.
 want to use. This commands uses a multiline syntax with `<<`, which means that pseudo-shells
 that don't support it (Weevely is a good example of that) will break this command quite badly.
 
+Plugins can be further configured by editing `ffm.conf`.
+
 ### Processors
 
 Conceptually, commands (as described above) are used to generate some bash which is forwarded
