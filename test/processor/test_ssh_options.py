@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import processors.ssh_command_line as ssh_command_line
 from processors.ssh_command_line import SSHOptions
 from processors.processor_manager import ProcessorAction
 from test.processor.processor_test_fixture import ProcessorUnitTest
@@ -53,3 +54,44 @@ class TestSSHCommandLineProcessor(ProcessorUnitTest):
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
         self.assertEqual(result[1], cmdline)
+
+    def test_username_standard(self):
+        cmdline = "ssh host -p2222 -v"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.CANCEL)
+        self.assertEqual(result[1], None)
+
+    def test_username_complex(self):
+        cmdline = "echo ls |ssh host -p2222 -v ; echo 'Done!'&"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.CANCEL)
+        self.assertEqual(result[1], None)
+
+    def test_username_not_applicable(self):
+        cmdline = "find . -name ls |base64"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(result[1], cmdline)
+
+    def test_T_option_config_bypass(self):
+        old = ssh_command_line.context.config["SSHOptions"]["force_disable_pty_allocation"]
+        ssh_command_line.context.config["SSHOptions"]["force_disable_pty_allocation"] = False
+        cmdline = "ssh root@host -p2222 -v"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(result[1], cmdline)
+        ssh_command_line.context.config["SSHOptions"]["force_disable_pty_allocation"] = old
+
+    def test_username_config_bypass(self):
+        old = ssh_command_line.context.config["SSHOptions"]["require_explicit_username"]
+        ssh_command_line.context.config["SSHOptions"]["require_explicit_username"] = False
+        cmdline = "ssh host -p2222 -v"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(result[1], cmdline + " -T")
+        ssh_command_line.context.config["SSHOptions"]["require_explicit_username"] = old

@@ -37,9 +37,22 @@ class SSHOptions(Processor):
             return ProcessorAction.FORWARD, user_input
 
         ssh_cmdline = get_arguments(user_input, "ssh")
-        if not re.search(r'\-[a-zA-Z]*T', ssh_cmdline):  # Check if the -T option is present
-            write_str("Notice: automatically adding the -T option to the ssh command!\r\n", LogLevel.WARNING)
-            return ProcessorAction.FORWARD, (user_input.replace(ssh_cmdline, "%s %s" % (ssh_cmdline, "-T"), 1))
+
+        # Block the command if the username is leaking
+        if context.config["SSHOptions"]["require_explicit_username"]:
+            if "@" not in ssh_cmdline:
+                write_str("FFM blocked a command that may leak your local username. "
+                          "Please specify the remote user explicitly.\r\n", LogLevel.ERROR)
+                return ProcessorAction.CANCEL, None
+
+        # Add the -T option if it is missing
+        if context.config["SSHOptions"]["force_disable_pty_allocation"]:
+            if not re.search(r'\-[a-zA-Z]*T', ssh_cmdline):  # Check if the -T option is present
+                write_str("Notice: automatically adding the -T option to the ssh command!\r\n", LogLevel.WARNING)
+                return ProcessorAction.FORWARD, (user_input.replace(ssh_cmdline, "%s %s" % (ssh_cmdline, "-T"), 1))
+            return ProcessorAction.FORWARD, user_input
+
+        # Nothing done
         return ProcessorAction.FORWARD, user_input
 
     @staticmethod
