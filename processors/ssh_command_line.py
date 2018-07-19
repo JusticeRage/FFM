@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import re
+import argparse
 
 from model import context
 from model.plugin.processor import Processor, ProcessorType, ProcessorAction
@@ -38,19 +38,25 @@ class SSHOptions(Processor):
 
         ssh_cmdline = get_arguments(user_input, "ssh")
 
+        # Use argparse to look for the interesting arguments in the SSH command:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-l", nargs='?', default=None)
+        parser.add_argument("-T", action="store_true")
+        parser.add_argument("positional", nargs='+')
+        args, _ = parser.parse_known_args(ssh_cmdline.split())
+
         # Block the command if the username is leaking
         if context.config["SSHOptions"]["require_explicit_username"]:
-            if "@" not in ssh_cmdline:
+            if not any("@" in arg for arg in args.positional) and not args.l:
                 write_str("FFM blocked a command that may leak your local username. "
                           "Please specify the remote user explicitly.\r\n", LogLevel.ERROR)
                 return ProcessorAction.CANCEL, None
 
         # Add the -T option if it is missing
         if context.config["SSHOptions"]["force_disable_pty_allocation"]:
-            if not re.search(r'\-[a-zA-Z]*T', ssh_cmdline):  # Check if the -T option is present
+            if not args.T:
                 write_str("Notice: automatically adding the -T option to the ssh command!\r\n", LogLevel.WARNING)
                 return ProcessorAction.FORWARD, (user_input.replace(ssh_cmdline, "%s %s" % (ssh_cmdline, "-T"), 1))
-            return ProcessorAction.FORWARD, user_input
 
         # Nothing done
         return ProcessorAction.FORWARD, user_input

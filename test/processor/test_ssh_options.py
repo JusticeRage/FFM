@@ -69,6 +69,20 @@ class TestSSHCommandLineProcessor(ProcessorUnitTest):
         self.assertEqual(result[0], ProcessorAction.CANCEL)
         self.assertEqual(result[1], None)
 
+    def test_username_l_option(self):
+        cmdline = "echo ls |ssh host -p2222 -v -T -lroot ; echo 'Done!'&"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(result[1], cmdline)
+
+    def test_username_l_option_2(self):
+        cmdline = "echo ls |ssh host -p2222 -v -T -l user ; echo 'Done!'&"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(result[1], cmdline)
+
     def test_username_not_applicable(self):
         cmdline = "find . -name ls |base64"
         p = SSHOptions()
