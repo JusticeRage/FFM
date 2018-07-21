@@ -112,13 +112,10 @@ def main():
                             os.write(context.stdout.fileno(), ("%02X " % c).encode("UTF-8"))
 
                     # Store the last line for future use
-                    # Only work on the last line
                     last = read.split(b"\n")[-1]
-                    if len(last) < 150 and b"\x07" in last:  # TODO: bug when cat-ing a binary file!
-                        # This is motivated by my Debian shell's prompt containing weird \x07 bytes separating
-                        # two prompt occurrences.
-                        context.active_session.input_driver.last_line = last.split(b"\x07")[-1].decode("UTF-8", errors='ignore')
-                    elif re.match(PROMPT_REGEXP, last.decode("UTF-8", errors='ignore'), re.UNICODE):
+                    # Debian terminals update the window title with this escape sequence. Ignore it.
+                    last = re.sub(b"\x1b]0;.*?\x07", b"", last)
+                    if re.match(PROMPT_REGEXP, last.decode("UTF-8", errors='ignore'), re.UNICODE):
                         context.active_session.input_driver.last_line = last.decode("UTF-8")
                     else:
                         context.active_session.input_driver.last_line = ''
