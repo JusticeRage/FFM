@@ -15,13 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import argparse
-
 from model import context
 from model.plugin.processor import Processor, ProcessorType, ProcessorAction
 from processors.processor_manager import register_processor
 from model.driver.input_api import write_str, LogLevel
 from misc.string_utils import get_commands, get_arguments, CMDLINE_SEPARATORS
+from misc.silent_argparse import SilentArgumentParser
 
 class SSHOptions(Processor):
     """
@@ -29,7 +28,6 @@ class SSHOptions(Processor):
     This limits the amount of forensics evidence created and avoids conflicts between
     the remote TTY and the one emulated by FFM.
     """
-
     def apply(self, user_input):
         # Add the proxy commands to the tokens: torify ssh is considered to be an SSH call.
         separators = CMDLINE_SEPARATORS + tuple(context.config["AssertTorify"]["proxy_commands"].split())
@@ -37,13 +35,25 @@ class SSHOptions(Processor):
             return ProcessorAction.FORWARD, user_input
 
         ssh_cmdline = get_arguments(user_input, "ssh")
+        options_added = []
 
         # Use argparse to look for the interesting arguments in the SSH command:
-        parser = argparse.ArgumentParser()
+        parser = SilentArgumentParser()
         parser.add_argument("-l", nargs='?', default=None)
         parser.add_argument("-T", action="store_true")
+        parser.add_argument("-o", nargs='+')
+        parser.add_argument("-i", nargs='+')
+        parser.add_argument("-v", action="store_true")
+        parser.add_argument("-N", action="store_true")
+        parser.add_argument("-D")
+        parser.add_argument("-L")
+        parser.add_argument("-R")
         parser.add_argument("positional", nargs='+')
-        args, _ = parser.parse_known_args(ssh_cmdline.split())
+        try:
+            args, _ = parser.parse_known_args(ssh_cmdline.split())
+        except RuntimeError:
+            # The SSH command line seems invalid. Let SSH display its error message / usage.
+            return ProcessorAction.FORWARD, user_input
 
         # Block the command if the username is leaking
         if context.config["SSHOptions"]["require_explicit_username"]:
@@ -52,13 +62,23 @@ class SSHOptions(Processor):
                           "Please specify the remote user explicitly.\r\n", LogLevel.ERROR)
                 return ProcessorAction.CANCEL, None
 
+        # Add -oPubkeyAuthentication=no to prevent SSH keys from leaking.
+        if context.config["SSHOptions"]["prevent_ssh_key_leaks"]:
+            if not args.i and (
+                    not args.o or
+                    not any("PubkeyAuthentication" in option for option in args.o)
+            ):
+                options_added.append("-oPubkeyAuthentication=no")
+
         # Add the -T option if it is missing
         if context.config["SSHOptions"]["force_disable_pty_allocation"]:
             if not args.T:
-                write_str("Notice: automatically adding the -T option to the ssh command!\r\n", LogLevel.WARNING)
-                return ProcessorAction.FORWARD, (user_input.replace(ssh_cmdline, "%s %s" % (ssh_cmdline, "-T"), 1))
+                options_added.append("-T")
 
-        # Nothing done
+        if options_added:
+            user_input = user_input.replace(ssh_cmdline, "%s %s" % (ssh_cmdline, " ".join(options_added)), 1)
+            write_str("Notice: the following options were added to the SSH command: %s.\r\n" % ", ".join(options_added),
+                      LogLevel.WARNING)
         return ProcessorAction.FORWARD, user_input
 
     @staticmethod

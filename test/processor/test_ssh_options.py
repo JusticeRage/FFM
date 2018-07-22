@@ -25,17 +25,17 @@ class TestSSHCommandLineProcessor(ProcessorUnitTest):
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
-        self.assertEqual(result[1], cmdline + " -T")
+        self.assertEqual(result[1], cmdline + " -oPubkeyAuthentication=no -T")
 
     def test_complex_case(self):
         cmdline = "torify ssh root@host -p2222 &"
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
-        self.assertEqual(result[1], "torify ssh root@host -p2222 -T &")
+        self.assertEqual(result[1], "torify ssh root@host -p2222 -oPubkeyAuthentication=no -T &")
 
     def test_option_already_present(self):
-        cmdline = "ssh root@host -T -p2222 -v"
+        cmdline = "ssh root@host -oPubkeyAuthentication=no -T -p2222 -v"
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
@@ -70,14 +70,14 @@ class TestSSHCommandLineProcessor(ProcessorUnitTest):
         self.assertEqual(result[1], None)
 
     def test_username_l_option(self):
-        cmdline = "echo ls |ssh host -p2222 -v -T -lroot ; echo 'Done!'&"
+        cmdline = "echo ls |ssh host -p2222 -v -T -oPubkeyAuthentication=no -lroot ; echo 'Done!'&"
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
         self.assertEqual(result[1], cmdline)
 
     def test_username_l_option_2(self):
-        cmdline = "echo ls |ssh host -p2222 -v -T -l user ; echo 'Done!'&"
+        cmdline = "echo ls |ssh host -p2222 -v -T -l user -oPubkeyAuthentication=no ; echo 'Done!'&"
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
@@ -90,9 +90,24 @@ class TestSSHCommandLineProcessor(ProcessorUnitTest):
         self.assertEqual(result[0], ProcessorAction.FORWARD)
         self.assertEqual(result[1], cmdline)
 
-    def test_T_option_config_bypass(self):
+    def test_pubkey_authentication_present(self):
+        cmdline = "ssh root@host -p2222 -vT -oPubkeyAuthentication=yolo"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(result[1], cmdline)
+
+    def test_pubkey_explicit(self):
+        cmdline = "ssh root@host -p2222 -vT -i ~/.ssh/id_rsa"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(result[1], cmdline)
+
+    def test_option_config_bypass(self):
         old = ssh_command_line.context.config["SSHOptions"]["force_disable_pty_allocation"]
         ssh_command_line.context.config["SSHOptions"]["force_disable_pty_allocation"] = False
+        ssh_command_line.context.config["SSHOptions"]["prevent_ssh_key_leaks"] = False
         cmdline = "ssh root@host -p2222 -v"
         p = SSHOptions()
         result = p.apply(cmdline)
@@ -107,5 +122,5 @@ class TestSSHCommandLineProcessor(ProcessorUnitTest):
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
-        self.assertEqual(result[1], cmdline + " -T")
+        self.assertEqual(result[1], cmdline + " -oPubkeyAuthentication=no -T")
         ssh_command_line.context.config["SSHOptions"]["require_explicit_username"] = old
