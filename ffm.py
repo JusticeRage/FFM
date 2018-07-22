@@ -115,7 +115,11 @@ def main():
                     last = read.split(b"\n")[-1]
                     # Debian terminals update the window title with this escape sequence. Ignore it.
                     last = re.sub(b"\x1b]0;.*?\x07", b"", last)
+                    # Kali terminals add color to the prompt. Strip it.
+                    last = re.sub(b"\x1b\[[0-?]*[ -/]*[@-~]", b"", last)
                     if re.match(PROMPT_REGEXP, last.decode("UTF-8", errors='ignore'), re.UNICODE):
+                        # TODO: keep the colors in the saved prompt. This will require all
+                        # references of len(last_line) to be updated to ignore escape sequences.
                         context.active_session.input_driver.last_line = last.decode("UTF-8")
                     else:
                         context.active_session.input_driver.last_line = ''
