@@ -16,13 +16,14 @@
 """
 
 from commands.command_manager import parse_commands
-from processors.processor_manager import apply_processors, INPUT_PROCESSOR_LIST
+import misc.logging
 import model.ansi as ansi
 from misc.pretty_printing import print_columns
 from misc.string_utils import *
 from misc.tab_completion import complete, remote_completion, local_completion
 from model.driver.base import BaseDriver
 from model.driver.input_api import *
+from processors.processor_manager import apply_processors, INPUT_PROCESSOR_LIST
 
 # -----------------------------------------------------------------------------
 
@@ -147,7 +148,7 @@ class DefaultInputDriver(BaseDriver):
         It is expected that the line has been erased before calling this function,
         for instance through clear_line()
         """
-        write_str(self.last_line + self.input_buffer)
+        write_str_internal(self.last_line + self.input_buffer)
         x, y = self._backwards_move(self.cursor_position)
         self.relative_caret_move(x, y)
 
@@ -169,10 +170,10 @@ class DefaultInputDriver(BaseDriver):
             write(ansi.SC)  # Save the cursor position.
             # Will the deletion cause the last line to be empty?
             if (len(self.last_line) - 1 + len(self.input_buffer)) % context.window_size[1] == 0:
-                write_str(self.input_buffer[-self.cursor_position:] + "\r\n")
+                write_str_internal(self.input_buffer[-self.cursor_position:] + "\r\n")
                 write(ansi.DCH())
             else:
-                write_str(self.input_buffer[-self.cursor_position:])
+                write_str_internal(self.input_buffer[-self.cursor_position:])
                 write(ansi.DCH())
             self.pop(1)
             write(ansi.RC)  # Restore the cursor position.
@@ -217,11 +218,11 @@ class DefaultInputDriver(BaseDriver):
 
     def print_character(self, c):
         if self.cursor_position == 0:
-            write_str(c)
+            write_str_internal(c)
             return
 
         # Will the addition cause au new line to be created?
-        write_str(c + self.input_buffer[-self.cursor_position:])
+        write_str_internal(c + self.input_buffer[-self.cursor_position:])
         if (len(self.last_line) + len(self.input_buffer)) % context.window_size[1] == 0:
             write(b"\r\n")
         x, y = self._backwards_move(self.cursor_position, len(self.input_buffer))
@@ -539,7 +540,7 @@ class DefaultInputDriver(BaseDriver):
             # If the user is connected to a shell with no TTY, ask for confirmation to avoid
             # terminating it.
             if c == 0x03 and self.last_line == "":
-                write_str("\rWarning: ^C may terminate the current shell! Please confirm by "
+                write_str("\r\nWarning: ^C may terminate the current shell! Please confirm by "
                           "sending it again.\r\n", LogLevel.WARNING)
                 self.draw_current_line()
                 self.state = self._state_confirm_sigint
@@ -577,11 +578,15 @@ class DefaultInputDriver(BaseDriver):
                 self.history.append(self.input_buffer)
                 self.history_cursor = 0
 
+            # Update the log file if there is one:
+            misc.logging.log(("%s\r\n" % self.input_buffer).encode('UTF-8'))
+
             if parse_commands(self.input_buffer):
                 # A command has been detected and was executed.
                 # Write a new prompt.
                 self.input_buffer = ""
                 self.draw_current_line()
+                misc.logging.log(self.last_line.encode("UTF-8"))  # Manually write the prompt to the log too.
             else:
                 # No command detected: forward the input to the TTY.
                 (proceed, command_line) = apply_processors(self.input_buffer, INPUT_PROCESSOR_LIST)
@@ -596,16 +601,16 @@ class DefaultInputDriver(BaseDriver):
             if self.cursor_position == 0:
                 self.clear_line()
                 self.input_buffer = ""
-                write_str(self.last_line)
+                write_str_internal(self.last_line)
             elif self.cursor_position != len(self.input_buffer):
                 # Delete the whole line and rewrite the updated one, while keeping track
                 # of where the cursor should be placed.
                 self.clear_line()
                 self.input_buffer = self.input_buffer[-self.cursor_position:]
                 self.cursor_position = len(self.input_buffer)
-                write_str(self.last_line)
+                write_str_internal(self.last_line)
                 write(ansi.SC)
-                write_str(self.input_buffer)
+                write_str_internal(self.input_buffer)
                 write(ansi.RC)
         # ^W: delete the current word.
         elif c == 0x17:
@@ -716,7 +721,7 @@ class DefaultInputDriver(BaseDriver):
             self.parameters = ""
             self.state = self._state_ground
         else:
-            write_str("Parameters: " + self.parameters)
+            write_str_internal("Parameters: " + self.parameters)
             raise RuntimeError("Not implemented! (CSI Param, 0x%02X)" % c)
 
     # -----------------------------------------------------------------------------
@@ -781,6 +786,6 @@ class DefaultInputDriver(BaseDriver):
         :param msg: A prefix to display before the dump.
         :return:
         """
-        write_str("\r\n" + msg + " ")
+        write_str_internal("\r\n" + msg + " ")
         for c in self.input_buffer:
-            write_str("%c (%02X) " % (c, ord(c)))
+            write_str_internal("%c (%02X) " % (c, ord(c)))

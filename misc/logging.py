@@ -14,16 +14,23 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import datetime
+import re
 
-import sys
+from model import context
 
-debug_input = False
-debug_output = False
-log = None
-stdout = None
-stdin = sys.stdin
-config = None
+def log(s):
+    """
+    Adds a string to the log file.
+    This function checks whether a log file is currently specified and
+    performs any processing on the input.
+    :param s: The string to log.
+    """
+    if not context.log or not s:
+        return
 
-active_session = None
-sessions = []
-window_size = None
+    s = re.sub(b"\x1b]0;.*?\x07", b"", s)  # Strip window title updates in all cases.
+    if context.config["General"]["strip_color"]:
+        s = re.sub(b"\x1b\[[0-?]*[ -/]*[@-~]", b"", s)  # Strip ANSI color codes
+
+    context.log.write(s)

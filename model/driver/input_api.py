@@ -15,8 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from enum import Enum
-import os
+import misc.logging
 from model import context
+import os
 import random
 import string
 import sys
@@ -48,10 +49,22 @@ class LogLevel(Enum):
 
 # -----------------------------------------------------------------------------
 
+def write_str_internal(s):
+    """
+    Shorthand function which directly prints a string to stdout.
+    In particular, this function bypasses any logging. Plugin developers should
+    use write_str instead.
+    :param s: The string to print.
+    """
+    write(s.encode('UTF-8'))
+
+# -----------------------------------------------------------------------------
+
 def write_str(s, level=LogLevel.INFO):
     """
-    Shorthand function that prints a string to stdout.
+    Function used to print strings to stdout.
     :param s: The string to print.
+    :param level: The importance of the message. Either INFO, WARNING or ERROR.
     """
     if level == LogLevel.WARNING:
         msg = WARNING + s + ENDC
@@ -59,7 +72,9 @@ def write_str(s, level=LogLevel.INFO):
         msg = ERROR + s + ENDC
     else:
         msg = s
-    write(msg.encode('UTF-8'))
+    # Log the message if a log file is opened:
+    misc.logging.log(msg.encode('UTF-8'))
+    write_str_internal(msg)
 
 # -----------------------------------------------------------------------------
 

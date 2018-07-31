@@ -33,6 +33,7 @@ import tty
 from misc.banners import BANNERS
 import model.context as context
 from model.driver.input import DefaultInputDriver
+import misc.logging
 from model.session import Session
 from processors.processor_manager import apply_processors, OUTPUT_PROCESSOR_LIST
 
@@ -65,6 +66,7 @@ def main():
     parser = argparse.ArgumentParser(description="Freedom Fighting Mode.")
     parser.add_argument("--debug-input", action="store_true", help="Toggle debugging of the user input.")
     parser.add_argument("--debug-output", action="store_true", help="Toggle debugging of the terminal output.")
+    parser.add_argument("--log", "-l", help="Log the session to a file.")
     parser.add_argument("--config", "-c", help="The harness' configuration file.",
                         default=os.path.join(os.path.dirname(__file__), "ffm.conf"))
     parser.add_argument("--stdout", help="Redirect stdout to the target file.")
@@ -83,6 +85,16 @@ def main():
         return
     context.config = configparser.ConfigParser(allow_no_value=True, inline_comment_prefixes=("#", ";"))
     context.config.read(args.config)
+
+    if args.log or context.config["General"]["log_file"]:
+        # Use the file specified in the configuration unless explicitly overriden in the command line.
+        if not args.log:
+            args.log = context.config["General"]["log_file"]
+        try:
+            context.log = open(args.log, "a+b")
+        except OSError as e:
+            print("Could not open the log file (%s)." % str(e))
+            return
 
     context.terminal_driver = DefaultInputDriver()
     stdin_fd = sys.stdin.fileno()
@@ -107,6 +119,7 @@ def main():
                         os.write(context.stdout.fileno(), b"\r\n%s\r\n" % str(e).encode("UTF-8"))
                 elif context.active_session.master in r:
                     read = os.read(context.active_session.master, 2048)
+                    misc.logging.log(read)
                     if context.debug_output:
                         for c in read:
                             os.write(context.stdout.fileno(), ("%02X " % c).encode("UTF-8"))
@@ -144,6 +157,8 @@ def main():
         print("FFM disabled.\r")
 
     finally:
+        if context.log:
+            context.log.close()
         termios.tcsetattr(stdin_fd, termios.TCSADRAIN, old_settings)
         signal.signal(signal.SIGWINCH, old_handler)
 
