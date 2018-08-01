@@ -46,7 +46,7 @@ class Upload(Command):
 
     @staticmethod
     def regexp():
-        return r"^\!upload"
+        return r"^\s*\!upload($| )"
 
     @staticmethod
     def usage():

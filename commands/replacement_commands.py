@@ -28,7 +28,7 @@ class GetOS(Command):
 
     @staticmethod
     def regexp():
-        return r"^\s*!os"
+        return r"^\s*\!os($| )"
 
     @staticmethod
     def name():
@@ -37,6 +37,10 @@ class GetOS(Command):
     @staticmethod
     def description():
         return "Prints the distribution of the current machine."
+
+    @staticmethod
+    def usage():
+        return "Usage: !os"
 
     def execute(self):
         shell_exec("cat /etc/*release*", print_output=True)
@@ -49,7 +53,7 @@ class PtySpawn(Command):
 
     @staticmethod
     def regexp():
-        return r"^\s*!pty\s*"
+        return r"^\s*!pty($| )"
 
     @staticmethod
     def name():
@@ -58,6 +62,10 @@ class PtySpawn(Command):
     @staticmethod
     def description():
         return "Spawns a PTY in the current shell."
+
+    @staticmethod
+    def usage():
+        return "Usage: !pty"
 
     def execute(self):
         if context.active_session.input_driver.last_line:
@@ -77,7 +85,7 @@ class Debug(Command):
 
     @staticmethod
     def regexp():
-        return r"^\s*!dbg"
+        return r"^\s*!dbg($| )"
 
     @staticmethod
     def name():
@@ -86,6 +94,10 @@ class Debug(Command):
     @staticmethod
     def description():
         return "Prints debug information."
+
+    @staticmethod
+    def usage():
+        return "Usage: !dbg"
 
     def execute(self):
         write_str("Current command prompt: %s\r\n" %

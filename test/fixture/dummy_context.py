@@ -17,32 +17,47 @@
 import configparser
 import os
 import unittest
+
+# Modules to monkey-patch:
 import model.driver.input_api as input_api
 import processors.assert_torify as assert_torify
 import processors.ssh_command_line as ssh_command_line
+import commands.command_manager as command_manager
+import commands.log_control as log_control
+import misc.logging as logging
 
 class DummyContext:
     def __init__(self):
         self.stdout = open("/dev/null", "w")
         self.config = configparser.ConfigParser(allow_no_value=True, inline_comment_prefixes=("#", ";"))
         self.config.read(os.path.join(os.path.dirname(__file__), "../../ffm.conf"))
+        self.log = None
 
     def __del__(self):
         self.stdout.close()
 
-class ProcessorUnitTest(unittest.TestCase):
+class DummyContextTest(unittest.TestCase):
     """
-    This Fixture makes sure that a dummy context is set up, pointing to /dev/null.
+    This fixture makes sure that a dummy context is set up, pointing to /dev/null.
     It prevents the tests from crashing when trying to write to stdout.
     """
     def setUp(self):
         self.old_ctx = input_api.context
-        dummy = DummyContext()
-        input_api.context = dummy
-        assert_torify.context = dummy
-        ssh_command_line.context = dummy
+        self.context = DummyContext()
+        input_api.context = self.context
+        assert_torify.context = self.context
+        ssh_command_line.context = self.context
+        log_control.context = self.context
+        logging.context = self.context
+        command_manager.context = self.context
 
     def tearDown(self):
+        if self.context.log:
+            self.context.log.close()
+            self.context.log = None
         input_api.context = self.old_ctx
         assert_torify.context = self.old_ctx
         ssh_command_line.context = self.old_ctx
+        log_control.context = self.old_ctx
+        logging.context = self.old_ctx
+        command_manager.context = self.old_ctx

@@ -37,3 +37,8 @@ class Command(metaclass=ABCMeta):
     @abstractmethod
     def description():
         raise NotImplementedError("Method description is not implemented")
+
+    @staticmethod
+    @abstractmethod
+    def usage():
+        raise NotImplementedError("Method usage is not implemented")

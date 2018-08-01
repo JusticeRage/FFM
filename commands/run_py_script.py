@@ -21,7 +21,7 @@ import os
 
 
 class RunPyScript(Command):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args):
         if len(args) < 2:
             raise RuntimeError("Received %d argument(s), expected 2." % len(args))
         self.script = os.path.expanduser(args[1])
@@ -31,7 +31,7 @@ class RunPyScript(Command):
 
     @staticmethod
     def regexp():
-        return r"^\!py"
+        return r"^\s*\!py($| )"
 
     @staticmethod
     def usage():

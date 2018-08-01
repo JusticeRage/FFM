@@ -34,7 +34,7 @@ class Download(Command):
         elif len(args) == 2:
             self.destination = os.path.basename(args[1])
         else:
-            self.destination = args[2]
+            self.destination = os.path.expanduser(args[2])
 
         if os.path.exists(self.destination):
             raise RuntimeError("%s already exists! Aborting." % self.destination)
@@ -48,7 +48,7 @@ class Download(Command):
 
     @staticmethod
     def regexp():
-        return r"^\!download"
+        return r"^\s*\!download($| )"
 
     @staticmethod
     def usage():

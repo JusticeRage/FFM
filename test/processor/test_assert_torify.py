@@ -16,9 +16,9 @@
 """
 from processors.processor_manager import ProcessorAction
 from processors.assert_torify import AssertTorify
-from test.processor.processor_test_fixture import ProcessorUnitTest
+from test.fixture.dummy_context import DummyContextTest
 
-class TestAssertTorify(ProcessorUnitTest):
+class TestAssertTorify(DummyContextTest):
     def test_standard_case(self):
         cmdline = "ssh root@host -p2222 -v"
         p = AssertTorify()

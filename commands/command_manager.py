@@ -71,7 +71,7 @@ class ListPlugins(Command):
 
     @staticmethod
     def regexp():
-        return r"^\!list"
+        return r"^\s*\!list($| )"
 
     @staticmethod
     def name():
