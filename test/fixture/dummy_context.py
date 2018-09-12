@@ -22,6 +22,7 @@ import unittest
 import model.driver.input_api as input_api
 import processors.assert_torify as assert_torify
 import processors.ssh_command_line as ssh_command_line
+import processors.rdesktop_command_line as rdesktop_command_line
 import commands.command_manager as command_manager
 import commands.log_control as log_control
 import misc.logging as logging
@@ -47,6 +48,7 @@ class DummyContextTest(unittest.TestCase):
         input_api.context = self.context
         assert_torify.context = self.context
         ssh_command_line.context = self.context
+        rdesktop_command_line.context = self.context
         log_control.context = self.context
         logging.context = self.context
         command_manager.context = self.context
@@ -58,6 +60,7 @@ class DummyContextTest(unittest.TestCase):
         input_api.context = self.old_ctx
         assert_torify.context = self.old_ctx
         ssh_command_line.context = self.old_ctx
+        rdesktop_command_line.context = self.old_ctx
         log_control.context = self.old_ctx
         logging.context = self.old_ctx
         command_manager.context = self.old_ctx

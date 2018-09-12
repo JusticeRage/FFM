@@ -41,8 +41,8 @@ class SSHOptions(Processor):
         parser = SilentArgumentParser()
         parser.add_argument("-l", nargs='?', default=None)
         parser.add_argument("-T", action="store_true")
-        parser.add_argument("-o", nargs='+')
-        parser.add_argument("-i", nargs='+')
+        parser.add_argument("-o", action="append")
+        parser.add_argument("-i", action="append")
         parser.add_argument("-v", action="store_true")
         parser.add_argument("-N", action="store_true")
         parser.add_argument("-D")
@@ -69,6 +69,11 @@ class SSHOptions(Processor):
                     not any("PubkeyAuthentication" in option for option in args.o)
             ):
                 options_added.append("-oPubkeyAuthentication=no")
+
+        # Add -oUserKnownHostsFile=/dev/null to prevent the connexion from being logged there.
+        if context.config["SSHOptions"]["disable_known_hosts"]:
+            if not args.o or not any("UserKnownHostsFile" in option for option in args.o):
+                options_added.append("-oUserKnownHostsFile=/dev/null")
 
         # Add the -T option if it is missing
         if context.config["SSHOptions"]["force_disable_pty_allocation"]:

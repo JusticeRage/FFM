@@ -19,7 +19,6 @@ from abc import abstractmethod
 from model.driver.input_api import *
 from model.plugin.command import Command
 from commands.command_manager import register_plugin
-import os
 
 
 class RemoteScript(Command):
@@ -48,7 +47,7 @@ class RemoteScript(Command):
         The command line which should be called to execute the script.
         :return:
         """
-        raise NotImplementedError("Method _get_interpreter is not implemented!")
+        raise NotImplementedError("Method _get_command_line is not implemented!")
 
     def execute(self):
         with open(self.script, 'r') as f:

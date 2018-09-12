@@ -19,6 +19,7 @@ import misc.logging
 from model import context
 import os
 import random
+import re
 import string
 import sys
 
@@ -93,7 +94,8 @@ def _read_all_output():
         # No prompt to detect. Add a marker manually to know when to stop reading the output.
         end_marker = MARKER
         os.write(context.active_session.master, ("echo -n %s\r" % MARKER_STR).encode("UTF-8"))
-    while not output.endswith(end_marker):
+    # Strip ascii color codes and such when looking for the end marker.
+    while not re.sub(b"\x1b]0;.*?\x07|\x1b\[[0-?]*[ -/]*[@-~]", b"", output).endswith(end_marker):
         # TODO: Check for timeouts here
         data = os.read(context.active_session.master, 4096)
         output += data
