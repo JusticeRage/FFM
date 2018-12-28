@@ -58,17 +58,20 @@ def remote_completion(base_directory):
     """
     if base_directory:
         output = shell_exec("ls -1A --color=never --indicator-style=slash "
-                            "-w %d %s 2>/dev/null" % (context.window_size[1], base_directory))
+                            "-w %d %s 2>/dev/null" % (context.window_size[1], base_directory),
+                            timeout=30)
     else:
         output = shell_exec("ls -1A --color=never --indicator-style=slash "
-                            "-w %d 2>/dev/null" % context.window_size[1])
+                            "-w %d 2>/dev/null" % context.window_size[1],
+                            timeout=30)
 
     # Add results from the path if needed
     if not base_directory:
         output += "\r\n"
         output += shell_exec("ls -1A --color=never --indicator-style=slash -w %d "
                              "`echo $PATH |tr ':' ' '` |grep -ve ':$\|^$' |sort -u "
-                             "2>/dev/null" % context.window_size[1])
+                             "2>/dev/null" % context.window_size[1],
+                             timeout=30)
 
     # Add plugins if needed
     if not base_directory:

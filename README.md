@@ -96,9 +96,11 @@ this happens when it fails to detect that a command it launched has finished run
 this means that the command prompt of the machine you're logged into could not be recognized
 as such. In that case, you can try improving the regular expression located at the very
 beginning of the file `ffm.py`, or log into that same machine with `ssh -T` as there won't be
-any problematic prompt anymore. When the framework hangs, there's not much you can do to unhang
-it beyond `pkill -f ffm.py` as there is no timeout mechanism at the moment (but there will be
-at some point).
+any problematic prompt anymore. 
+By default, FFM will give up on trying to read the output of a command after 5 minutes (some
+plugins may implement different timeouts); so if the framework hangs, you'll need to wait
+until you see an error message (though if the underlying process is still running, you may
+still not be able to type in commands).
 
 ## Closing statement
 

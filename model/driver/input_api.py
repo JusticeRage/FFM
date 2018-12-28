@@ -20,6 +20,7 @@ from model import context
 import os
 import random
 import re
+import select
 import string
 import sys
 
@@ -79,13 +80,15 @@ def write_str(s, level=LogLevel.INFO):
 
 # -----------------------------------------------------------------------------
 
-def _read_all_output():
+def _read_all_output(timeout):
     """
     Reads all the output of a command from the current terminal.
     This works by reading from the TTY until a command prompt is found.
     /!\ The end marker is expected to be the same as the one before the
     command was executed! This means that if the command changes the prompt,
     (ie. cd, etc.) this function will never return!
+    :param timeout The maximum amount of time to wait for the end of the
+    output.
     :return:
     """
     output = b""
@@ -96,9 +99,13 @@ def _read_all_output():
         os.write(context.active_session.master, ("echo -n %s\r" % MARKER_STR).encode("UTF-8"))
     # Strip ascii color codes and such when looking for the end marker.
     while not re.sub(b"\x1b]0;.*?\x07|\x1b\[[0-?]*[ -/]*[@-~]", b"", output).endswith(end_marker):
-        # TODO: Check for timeouts here
-        data = os.read(context.active_session.master, 4096)
-        output += data
+        r, _, _ = select.select([context.active_session.master], [], [], timeout)
+        if context.active_session.master in r:
+            output += os.read(context.active_session.master, 4096)
+        else:
+            write_str("Timeout reached; giving up on trying to capture the output.\r\n", LogLevel.ERROR)
+            return output.decode("UTF-8")
+
     # The last line of the output should be a new prompt or the marker. Exclude it from
     # the output.
     index = output.rfind(b"\r\n")
@@ -120,7 +127,7 @@ def pass_command(command):
 
 # -----------------------------------------------------------------------------
 
-def shell_exec(command, print_output=False, output_cleaner=None):
+def shell_exec(command, print_output=False, output_cleaner=None, timeout=300):
     """
     Executes a command in the shell.
     /!\ Do not run commands that change the prompt (ie. cd, etc.)!
@@ -129,10 +136,12 @@ def shell_exec(command, print_output=False, output_cleaner=None):
     to stdout.
     :param output_cleaner: A function to call on the output to preprocess it
     before printing it (ex: remove trailing newlines, etc.)
+    :param timeout: The maximum time to wait before giving up on trying to
+    read the output of the command.
     :return: The output of the command.
     """
     pass_command(command)
-    output = _read_all_output()
+    output = _read_all_output(timeout)
     if output_cleaner and callable(output_cleaner):
         output = output_cleaner(output)
     if print_output and output:
@@ -147,7 +156,7 @@ def file_exists(path):
     :param path: The path to test.
     :return: True if the file exists, False otherwise.
     """
-    output = shell_exec("test -f %s ; echo $?" % path)
+    output = shell_exec("test -f %s ; echo $?" % path, timeout=30)
     return int(output) == 0
 
 # -----------------------------------------------------------------------------
@@ -158,7 +167,7 @@ def is_directory(path):
     :param path: The path to test
     :return: True if the file is a directory.
     """
-    output = shell_exec("test -d %s ; echo $?" % path)
+    output = shell_exec("test -d %s ; echo $?" % path, timeout=30)
     return int(output) == 0
 
 # -----------------------------------------------------------------------------
@@ -169,5 +178,5 @@ def check_command_existence(cmd):
     :param cmd: The command whose existence we want to check.
     :return: True if the command is present on the system, False otherwise.
     """
-    output = shell_exec("command -v %s >/dev/null ; echo $?" % cmd)
+    output = shell_exec("command -v %s >/dev/null ; echo $?" % cmd, timeout=30)
     return int(output) == 0
