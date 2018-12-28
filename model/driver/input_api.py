@@ -120,17 +120,21 @@ def pass_command(command):
 
 # -----------------------------------------------------------------------------
 
-def shell_exec(command, print_output=False):
+def shell_exec(command, print_output=False, output_cleaner=None):
     """
     Executes a command in the shell.
     /!\ Do not run commands that change the prompt (ie. cd, etc.)!
     :param command: The command to run.
     :param print_output: Whether the output of the command should be printed
     to stdout.
+    :param output_cleaner: A function to call on the output to preprocess it
+    before printing it (ex: remove trailing newlines, etc.)
     :return: The output of the command.
     """
     pass_command(command)
     output = _read_all_output()
+    if output_cleaner and callable(output_cleaner):
+        output = output_cleaner(output)
     if print_output and output:
         write_str(output + "\r\n")
     return output

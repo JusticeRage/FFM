@@ -29,6 +29,7 @@ class RemoteScript(Command):
         if not os.path.exists(self.script):
             raise RuntimeError("%s not found!" % self.script)
         self.script_args = " ".join(args[2:]) if len(args) > 2 else ""
+        self.output_cleaner = None
 
         if not check_command_existence(self._get_interpreter()):
             raise RuntimeError("%s is not present on the machine!" % self._get_interpreter())
@@ -49,13 +50,22 @@ class RemoteScript(Command):
         """
         raise NotImplementedError("Method _get_command_line is not implemented!")
 
+    @abstractmethod
+    def _get_output_cleaner(self):
+        """
+        An optional function to clean up the output.
+        :return:
+        """
+        return None
+
     def execute(self):
         with open(self.script, 'r') as f:
             contents = f.read()
             shell_exec(self._get_command_line().format(interpreter=self._get_interpreter(),
                                                        args=self.script_args,
                                                        script=contents),
-                       print_output=True)
+                       print_output=True,
+                       output_cleaner=self._get_output_cleaner())
 
 # -----------------------------------------------------------------------------
 
@@ -81,6 +91,10 @@ class RunPyScript(RemoteScript):
 
     def _get_command_line(self):
         return "{interpreter} - {args} <<'__EOF__'\r\n{script}\r\n__EOF__"
+
+    def _get_output_cleaner(self):
+        # The Python interpreter displays a prompt while reading scripts from stdin. Strip it.
+        return lambda s: s.lstrip(" >")
 
 # -----------------------------------------------------------------------------
 
