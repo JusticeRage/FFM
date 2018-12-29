@@ -24,7 +24,7 @@ import select
 import string
 import sys
 
-MARKER_STR = ''.join(random.choice(string.ascii_letters) for i in range(32))
+MARKER_STR = ''.join(random.choice(string.ascii_letters) for _ in range(32))
 MARKER = MARKER_STR.encode("UTF-8")
 
 WARNING = '\033[93m'
@@ -180,3 +180,18 @@ def check_command_existence(cmd):
     """
     output = shell_exec("command -v %s >/dev/null ; echo $?" % cmd, timeout=30)
     return int(output) == 0
+
+# -----------------------------------------------------------------------------
+
+def get_tmpfs_folder():
+    """
+    Finds a tmpfs directory suitable for most operations. The citeria are:
+    - RW permissions
+    - The noexec flag is not set.
+    :return: A suitable folder, or None if it couldn't be found.
+    """
+    candidates = shell_exec('mount -t tmpfs |grep "rw" |grep -v "noexec" |cut -d" " -f3', timeout=30)
+    if candidates:
+        return candidates.split("\r\n")[0]
+    else:
+        return None
