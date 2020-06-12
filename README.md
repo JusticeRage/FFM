@@ -5,7 +5,7 @@ engagement. The idea of the tool was derived from a
 [2007 conference](https://conference.hitb.org/hitbsecconf2007kl/materials/D1T1%20-%20The%20Grugq%20-%20Meta%20Antiforensics%20-%20The%20HASH%20Hacking%20Harness.pdf) 
 from @thegrugq.
 
-It was presented at [SSTIC 2018](https://www.sstic.org) and the accompanying slide deck is 
+It was presented at [SSTIC 2018](https://www.sstic.org/2018/) ([video](https://www.sstic.org/2018/presentation/hacking_harness_ffm/)) and the accompanying slide deck is 
 available at [this url](http://manalyzer.org/static/talks/SSTIC2018.pptx). If you're not familiar
 with this class of tools, it is strongly advised to have a look at them to understand what a
 hacking harness' purpose is. All the comments are included in the slides.
