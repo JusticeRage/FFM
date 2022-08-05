@@ -112,13 +112,6 @@ Many plugins have yet to be written, so be sure to share back any improvements y
 FFM. Feel free to open issues not only for bugs, but also if you're trying to do something
 and can't figure out how; this way I'll be able to improve the documentation for everyone.
 
-## Miscellaneous
-
-### Donations
-The project is 100% free. I do like Bitcoins though, so if you want to send some my way, 
-here's an address you can use: ```1PUeq8FfyqvyJqA1Eb23qHrnkdPknt4aKF```
-Feel free to drop me a line if you donate, so I can thank you personally!
-
 ### Contact
 [![](https://manalyzer.org/static/mail.png)](justicerage@manalyzer[.]org)
 [![](https://manalyzer.org/static/twitter.png)](https://twitter.com/JusticeRage)
