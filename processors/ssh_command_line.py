@@ -80,6 +80,10 @@ class SSHOptions(Processor):
             if not args.T:
                 options_added.append("-T")
 
+        if context.config["SSHOptions"]["strict_host_checking"]:
+            if not args.o or not any("StrictHostChecking" in option for option in args.o):
+                options_added.append("-oStrictHostChecking=no")
+
         if options_added:
             user_input = user_input.replace(ssh_cmdline, "%s %s" % (ssh_cmdline, " ".join(options_added)), 1)
             write_str("Notice: the following options were added to the SSH command: %s.\r\n" % ", ".join(options_added),
