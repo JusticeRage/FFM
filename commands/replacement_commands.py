@@ -103,6 +103,8 @@ class Debug(Command):
         write_str("Current command prompt: %s\r\n" %
                   context.active_session.input_driver.last_line.encode("UTF-8"), LogLevel.WARNING)
 
+# -----------------------------------------------------------------------------
+
 class Suid(Command):
     def __init__(self, *args, **kwargs):
         pass
@@ -127,8 +129,35 @@ class Suid(Command):
         write_str("SUID + SGID Binaries: \r\n", LogLevel.WARNING)
         shell_exec("find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null; find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null", print_output=True)
 
+#lsmem | grep '^Total online memory:' | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && lscpu | grep "^CPU(s)" | tr -s " " && echo "Kernel Version: $(uname -r)"
+
+class Info(Command):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!info($| )"
+
+    @staticmethod
+    def name():
+        return "!info"
+
+    @staticmethod
+    def description():
+        return "Returns CPU(s), Architecture, Memory, and Kernel Verison for the current machine."
+
+    @staticmethod
+    def usage():
+        return "Usage: !info"
+
+    def execute(self):
+        write_str("System Info: \r\n", LogLevel.WARNING)
+        shell_exec('lscpu | grep "^CPU(s)" | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && echo "Kernel Version: $(uname -r)" && lsmem | grep "^Total online memory:" | tr -s " "', print_output=True)
+
 
 register_plugin(GetOS)
 register_plugin(PtySpawn)
 register_plugin(Debug)
 register_plugin(Suid)
+register_plugin(Info)
