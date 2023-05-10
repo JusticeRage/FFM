@@ -22,7 +22,7 @@ RUN useradd -rm -d /home/neo -s /bin/bash -G sudo -u 1000 neo
 RUN chown -R neo: /opt
 USER neo
 WORKDIR /opt
-RUN git clone https://github.com/ice-wzl/FFM.git
+RUN https://github.com/JusticeRage/FFM.git
 RUN cd FFM/
 RUN pip3 install tqdm
 RUN export PATH=$PATH:/home/neo/.local/bin
