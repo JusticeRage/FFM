@@ -1,5 +1,5 @@
 """
-    FFM by @JusticeRage
+    FFM by @JusticeRage and @ice-wzl
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -79,6 +79,10 @@ class SSHOptions(Processor):
         if context.config["SSHOptions"]["force_disable_pty_allocation"]:
             if not args.T:
                 options_added.append("-T")
+
+        if context.config["SSHOptions"]["strict_host_key_checking"]:
+            if not args.o or not any("StrictHostKeyChecking" in option for option in args.o):
+                options_added.append("-oStrictHostKeyChecking=no")
 
         if options_added:
             user_input = user_input.replace(ssh_cmdline, "%s %s" % (ssh_cmdline, " ".join(options_added)), 1)

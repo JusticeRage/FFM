@@ -88,7 +88,8 @@ class RunPyScript(RemoteScript):
 
     def _get_interpreter(self):
         return "python"
-
+    
+        
     def _get_command_line(self):
         return "{interpreter} - {args} <<'__EOF__'\r\n{script}\r\n__EOF__"
 
@@ -98,6 +99,35 @@ class RunPyScript(RemoteScript):
 
 # -----------------------------------------------------------------------------
 
+class RunPy3Script(RemoteScript):
+    @staticmethod
+    def regexp():
+        return r"^\s*\!py3($| )"
+
+    @staticmethod
+    def usage():
+        write_str("Usage: !py3 [script on the local machine] [script arguments]\r\n", LogLevel.WARNING)
+
+    @staticmethod
+    def name():
+        return "!py3"
+
+    @staticmethod
+    def description():
+        return "Runs a python3 script from the local machine in memory."
+
+    def _get_interpreter(self):
+        return "python3"
+    
+        
+    def _get_command_line(self):
+        return "{interpreter} - {args} <<'__EOF__'\r\n{script}\r\n__EOF__"
+
+    def _get_output_cleaner(self):
+        # The Python interpreter displays a prompt while reading scripts from stdin. Strip it.
+        return lambda s: s.lstrip(" >")
+
+# -----------------------------------------------------------------------------
 class RunShScript(RemoteScript):
     @staticmethod
     def regexp():
@@ -124,4 +154,5 @@ class RunShScript(RemoteScript):
 # -----------------------------------------------------------------------------
 
 register_plugin(RunPyScript)
+register_plugin(RunPy3Script)
 register_plugin(RunShScript)

@@ -1,5 +1,5 @@
 """
-    ffm.py by @JusticeRage
+    ffm.py by @JusticeRage and @ice-wzl
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -103,7 +103,61 @@ class Debug(Command):
         write_str("Current command prompt: %s\r\n" %
                   context.active_session.input_driver.last_line.encode("UTF-8"), LogLevel.WARNING)
 
+# -----------------------------------------------------------------------------
+
+class Suid(Command):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!suid($| )"
+
+    @staticmethod
+    def name():
+        return "!suid"
+
+    @staticmethod
+    def description():
+        return "Finds SUID, SGID binaries on the current machine."
+
+    @staticmethod
+    def usage():
+        return "Usage: !suid"
+
+    def execute(self):
+        write_str("SUID + SGID Binaries: \r\n", LogLevel.WARNING)
+        shell_exec("find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null; find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null", print_output=True)
+
+class Info(Command):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!info($| )"
+
+    @staticmethod
+    def name():
+        return "!info"
+
+    @staticmethod
+    def description():
+        return "Returns CPU(s), Architecture, Memory, and Kernel Verison for the current machine."
+
+    @staticmethod
+    def usage():
+        return "Usage: !info"
+
+    def execute(self):
+        write_str("System Info: \r\n", LogLevel.WARNING)
+        shell_exec('lscpu | grep "^CPU(s)" | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && echo "Kernel Version: $(uname -r)" && lsmem | grep "^Total online memory:" | tr -s " "', print_output=True)
+
+# -----------------------------------------------------------------------------
+
 
 register_plugin(GetOS)
 register_plugin(PtySpawn)
 register_plugin(Debug)
+register_plugin(Suid)
+register_plugin(Info)
