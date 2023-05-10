@@ -26,7 +26,8 @@ from model.driver import input, output
 class Session:
     def __init__(self):
         self.master, self.slave = pty.openpty()
-        self.bash = subprocess.Popen([os.getenv("SHELL", "/bin/bash")],
+        #self.bash = subprocess.Popen([os.getenv("SHELL", "/bin/bash")],
+        self.bash = subprocess.Popen([os.getenv("SHELL", "/bin/sh")],
                                      preexec_fn=os.setsid,
                                      stdin=self.slave,
                                      stdout=self.slave,

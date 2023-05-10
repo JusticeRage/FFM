@@ -616,7 +616,7 @@ class DefaultInputDriver(BaseDriver):
         elif c == 0x17:
             self.delete_word()
         # Backspace (^H)
-        elif c == 0x7F:
+        elif c == 0x7F or c == 0x08:
             self.backspace()
         elif 0 <= c <= 0x17 or c == 0x19 or 0x1C <= c <= 0x1F:
             # Execute
