@@ -60,6 +60,10 @@ class Upload(Command):
     def description():
         return "Uploads a file to the remote machine."
 
+    @staticmethod
+    def tag():
+        return "Transfer"
+
     def execute(self):
         with open(self.target_file, 'rb') as f:
             md5 = hashlib.md5()

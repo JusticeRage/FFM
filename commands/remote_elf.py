@@ -97,6 +97,10 @@ except Exception, e:
     @staticmethod
     def description():
         return "Runs an executable from the local machine in memory."
+    
+    @staticmethod
+    def tag():
+        return "Execution"
 
 
 register_plugin(RemoteElf)

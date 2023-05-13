@@ -58,16 +58,61 @@ def parse_commands(command_line):
 
 class ListPlugins(Command):
     def __init__(self, *nargs, **kwargs):
-        pass
+        if len(nargs) == 1:
+            self.tag = None 
+        elif len(nargs) == 2:
+            self.tag = nargs[1]
+        else:
+            raise RuntimeError("Received %d argument(s), expected 1 or 2." % len(nargs))
 
     def execute(self):
+        #if !list is provided with no args then print *
+        #if !list all is provided then do that as well 
         write_str("List of commands available:\r\n")
         strings = []
-        for c in COMMAND_LIST:
-            strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
-        # Sort the plugins by alphabetical order.
-        for s in sorted(strings):
-            write_str(s)
+        if self.tag == None or self.tag == "all": 
+            for c in COMMAND_LIST:
+                strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+            # Sort the plugins by alphabetical order.
+            for s in sorted(strings):
+                write_str(s)
+        elif self.tag == "execution":
+            for c in COMMAND_LIST:
+                if c.tag() == "Execution":
+                    strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+            for s in sorted(strings):
+                write_str(s)
+        elif self.tag == "tags":
+            for c in COMMAND_LIST:
+                strings.append("\t %s\r\n" % (c.tag()))
+            for s in sorted(set(strings)):
+                write_str(s.lower())
+        elif self.tag == "transfer":
+            for c in COMMAND_LIST:
+                if c.tag() == "Transfer":
+                    strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+            for s in sorted(strings):
+                write_str(s)
+        elif self.tag == "stealth":
+            for c in COMMAND_LIST:
+                if c.tag() == "Stealth":
+                    strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+            for s in sorted(strings):
+                write_str(s)
+        elif self.tag == "enumeration":
+            for c in COMMAND_LIST:
+                if c.tag() == "Enumeration":
+                    strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+            for s in sorted(strings):
+                write_str(s)
+        elif self.tag == "help":
+            for c in COMMAND_LIST:
+                if c.tag() == "Help":
+                    strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+            for s in sorted(strings):
+                write_str(s)
+        else:
+            write_str(self.usage())
 
     @staticmethod
     def regexp():
@@ -79,11 +124,15 @@ class ListPlugins(Command):
 
     @staticmethod
     def description():
-        return "Show the list of available commands."
+        return "Show the list of available commands/module tags."
+    
+    @staticmethod
+    def tag():
+        return "Help"
 
     @staticmethod
     def usage():
-        write_str("Usage: !list\r\n")
+        write_str("Usage:\r\n\t!list --> see all commands\r\n\t!list all --> see all commands\r\n\t!list tags --> see different module tags\r\n\t!list <tag-name> --> see commands related to <tag-name>\r\n", LogLevel.INFO)
 
 # -----------------------------------------------------------------------------
 # This section registers all known commands at startup. It starts by adding

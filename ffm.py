@@ -77,7 +77,7 @@ def main():
 
     # Print the banner
     print(random.choice(BANNERS) + "\n")
-    print("FFM enabled. Type !list to see available commands and exit to quit.")
+    print("FFM enabled\r\nType !list to see all available commands\r\n!list tags to see commands by module name\r\n!list <tag-name> to see all commands of that tag type\r\nType exit to quit.")
 
     # Check that the configuration file exists and is sane.
     if not os.path.exists(args.config):

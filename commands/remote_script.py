@@ -86,6 +86,10 @@ class RunPyScript(RemoteScript):
     def description():
         return "Runs a python script from the local machine in memory."
 
+    @staticmethod
+    def tag():
+        return "Execution"
+
     def _get_interpreter(self):
         return "python"
     
@@ -115,6 +119,10 @@ class RunPy3Script(RemoteScript):
     @staticmethod
     def description():
         return "Runs a python3 script from the local machine in memory."
+    
+    @staticmethod
+    def tag():
+        return "Execution"
 
     def _get_interpreter(self):
         return "python3"
@@ -144,6 +152,10 @@ class RunShScript(RemoteScript):
     @staticmethod
     def description():
         return "Runs a shell script from the local machine in memory."
+    
+    @staticmethod
+    def tag():
+        return "Execution"
 
     def _get_interpreter(self):
         return "sh"

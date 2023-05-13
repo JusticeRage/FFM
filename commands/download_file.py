@@ -61,6 +61,10 @@ class Download(Command):
     @staticmethod
     def description():
         return "Downloads a file from the remote machine."
+    
+    @staticmethod
+    def tag():
+        return "Transfer"
 
     def execute(self):
         file_size = int(shell_exec('stat -c "%%s" %s' % self.target_file, False))

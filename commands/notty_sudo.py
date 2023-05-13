@@ -68,6 +68,10 @@ class Sudo(Command):
     @staticmethod
     def description():
         return "Invoke sudo without a TTY."
+    
+    @staticmethod
+    def tag():
+        return "Stealth"
 
 
 register_plugin(Sudo)

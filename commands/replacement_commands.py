@@ -37,6 +37,10 @@ class GetOS(Command):
     @staticmethod
     def description():
         return "Prints the distribution of the current machine."
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
 
     @staticmethod
     def usage():
@@ -62,6 +66,10 @@ class PtySpawn(Command):
     @staticmethod
     def description():
         return "Spawns a PTY in the current shell."
+    
+    @staticmethod
+    def tag():
+        return "Stealth"
 
     @staticmethod
     def usage():
@@ -94,6 +102,10 @@ class Debug(Command):
     @staticmethod
     def description():
         return "Prints debug information."
+    
+    @staticmethod
+    def tag():
+        return "Help"
 
     @staticmethod
     def usage():
@@ -120,6 +132,10 @@ class Suid(Command):
     @staticmethod
     def description():
         return "Finds SUID, SGID binaries on the current machine."
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
 
     @staticmethod
     def usage():
@@ -144,6 +160,10 @@ class Info(Command):
     @staticmethod
     def description():
         return "Returns CPU(s), Architecture, Memory, and Kernel Verison for the current machine."
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
 
     @staticmethod
     def usage():
@@ -169,6 +189,10 @@ class SshKeys(Command):
     @staticmethod
     def description():
         return "Hunts for Private and Public SSH keys on the current machine."
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
 
     @staticmethod
     def usage():

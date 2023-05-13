@@ -84,6 +84,10 @@ class LogCommand(Command):
     @staticmethod
     def description():
         return "Toggles logging the harness' input and output to a file."
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
 
 
 register_plugin(LogCommand)
