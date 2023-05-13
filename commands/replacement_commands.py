@@ -154,6 +154,28 @@ class Info(Command):
         shell_exec('lscpu | grep "^CPU(s)" | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && echo "Kernel Version: $(uname -r)" && lsmem | grep "^Total online memory:" | tr -s " "', print_output=True)
 
 # -----------------------------------------------------------------------------
+class SshKeys(Command):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!sshkeys($| )"
+
+    @staticmethod
+    def name():
+        return "!sshkeys"
+
+    @staticmethod
+    def description():
+        return "Hunts for Private and Public SSH keys on the current machine."
+
+    @staticmethod
+    def usage():
+        return "Usage: !sshkeys"
+
+    def execute(self):
+        shell_exec('find / -type f -name "*.pub" 2>/dev/null; find / -type f -name "*_rsa" 2>/dev/null; find / -type f -name "*_ecsa" 2>/dev/null; find / -type f -name "*_ed25519" 2>/dev/null; find / -type f -name "*_dsa" 2>/dev/null', print_output=True)
 
 
 register_plugin(GetOS)
@@ -161,3 +183,4 @@ register_plugin(PtySpawn)
 register_plugin(Debug)
 register_plugin(Suid)
 register_plugin(Info)
+register_plugin(SshKeys)
