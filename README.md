@@ -13,6 +13,36 @@ hacking harness' purpose is. All the comments are included in the slides.
 This project is distributed under the terms of the 
 [GPL v3 License](https://www.gnu.org/licenses/gpl.html).
 
+## Installation
+### Docker Install
+ - With the diversity of modern terminal prompts, we highly recommend using `docker` with this tool.
+ - Utilizing the `Dockerfile` in this repository will drastically cut down on potential errors encountered.
+ - Utilizing a container to interact with remote hosts is also more secure. If you were to get exploited while interacting with a remote host, they would be sitting in your container vice your actual host.  Lets still hope that does not happen.
+ - Ensure you have `Docker` installed on your local system
+ ````
+ git clone https://github.com/JusticeRage/FFM.git
+ cd /FFM
+
+ docker build Docker_Install/ -t ffm:ffm
+ 
+ docker image list 
+ REPOSITORY                TAG         IMAGE ID      CREATED        SIZE
+ localhost/ffm             ffm         fb6dd17e3b91  9 minutes ago  614 MB
+ docker.io/library/ubuntu  22.04       3b418d7b466a  2 weeks ago    80.3 MB
+ 
+ #run your new container and drop into a /bin/bash prompt as root
+ docker run -it --entrypoint /bin/bash -u 0 fb6dd17e3b91
+ ````
+ - Once in your container set the `passwd` for `root` and `neo`
+ - `su neo` and now you are all set 
+### Non Docker Install
+- Not recommended
+````
+ git clone https://github.com/JusticeRage/FFM.git
+ cd /FFM
+ pip install -r requirements.txt
+````
+
 ## Usage
 
 The goal of a hacking harness is to act as a helper that automates common tasks during the 
