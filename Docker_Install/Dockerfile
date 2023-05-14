@@ -20,7 +20,6 @@ RUN useradd -rm -d /home/neo -s /bin/bash -G sudo -u 1000 neo
 RUN chown -R neo: /opt
 USER neo
 WORKDIR /home/neo/.ssh
-RUN ssh-keygen -q -t rsa -N '' -f id_rsa
 WORKDIR /opt
 RUN git clone https://github.com/JusticeRage/FFM.git
 WORKDIR /opt/FFM/
