@@ -14,7 +14,8 @@ RUN apt install -y curl \
     python3-dev \
     python3-pip \
     sudo \
-    vim 
+    vim \
+    net-tools 
  
 RUN useradd -rm -d /home/neo -s /bin/bash -G sudo -u 1000 neo
 RUN chown -R neo: /opt
