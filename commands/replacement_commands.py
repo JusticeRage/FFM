@@ -230,7 +230,36 @@ class SqliteHunter(Command):
     def execute(self):
         write_str("Sqlite Hunter: \r\n", LogLevel.WARNING)
         shell_exec("find / -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | grep -v /var/cache/man", print_output=True)
-        
+
+# -----------------------------------------------------------------------------
+
+class BackupHunter(Command):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!backup-hunter($| )"
+
+    @staticmethod
+    def name():
+        return "!backup-hunter"
+
+    @staticmethod
+    def description():
+        return "Hunts for backup files"
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
+
+    @staticmethod
+    def usage():
+        return "Usage: !backup-hunter"
+
+    def execute(self):
+        write_str("Backup Hunter: \r\n", LogLevel.WARNING)
+        shell_exec('find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /tmp -type f \( -name "*backup*" -o -name "*\.bak" -o -name "*\.bck" -o -name "*\.bk" \) 2>/dev/null', print_output=True)
 
 # -----------------------------------------------------------------------------
 class Mtime(Command):
@@ -279,3 +308,4 @@ register_plugin(Info)
 register_plugin(SshKeys)
 register_plugin(SqliteHunter)
 register_plugin(Mtime)
+register_plugin(BackupHunter)
