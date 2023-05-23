@@ -15,7 +15,10 @@ RUN apt install -y curl \
     python3-pip \
     sudo \
     vim \
-    net-tools 
+    net-tools \
+    rdesktop \
+    freerdp2-x11 \ 
+    tor
  
 RUN useradd -rm -d /home/neo -s /bin/bash -G sudo -u 1000 neo
 RUN chown -R neo: /opt

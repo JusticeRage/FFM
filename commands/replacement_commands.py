@@ -14,7 +14,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 import time
 from commands.command_manager import register_plugin
 from model.plugin.command import Command
@@ -199,7 +198,77 @@ class SshKeys(Command):
         return "Usage: !sshkeys"
 
     def execute(self):
+        write_str("Potential SSH Keys: \r\n", LogLevel.WARNING)
         shell_exec('find / -type f -name "*.pub" 2>/dev/null; find / -type f -name "*_rsa" 2>/dev/null; find / -type f -name "*_ecsa" 2>/dev/null; find / -type f -name "*_ed25519" 2>/dev/null; find / -type f -name "*_dsa" 2>/dev/null', print_output=True)
+        
+# -----------------------------------------------------------------------------
+
+class SqliteHunter(Command):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!sqlite-hunter($| )"
+
+    @staticmethod
+    def name():
+        return "!sqlite-hunter"
+
+    @staticmethod
+    def description():
+        return "Hunts for sqlite .db files"
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
+
+    @staticmethod
+    def usage():
+        return "Usage: !sqlite-hunter"
+
+    def execute(self):
+        write_str("Sqlite Hunter: \r\n", LogLevel.WARNING)
+        shell_exec("find / -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | grep -v /var/cache/man", print_output=True)
+        
+
+# -----------------------------------------------------------------------------
+class Mtime(Command):
+    def __init__(self, *args, **kwargs):
+        self.time = None
+        if len(args) == 2:
+            self.time = args[1]
+        else:
+            raise RuntimeError("Received %d argument(s), expected 2." % len(args))
+        
+
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!mtime($| )"
+
+    @staticmethod
+    def name():
+        return "!mtime"
+
+    @staticmethod
+    def description():
+        return "Returns files modified in the last X minutes"
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
+
+    @staticmethod
+    def usage():
+        return "Usage: !mtime 5"
+
+    def execute(self):
+        shell_exec('find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(self.time), print_output=True)
+        write_str("Module Complete.\r\n", LogLevel.WARNING)
+
+
+
 
 
 register_plugin(GetOS)
@@ -208,3 +277,5 @@ register_plugin(Debug)
 register_plugin(Suid)
 register_plugin(Info)
 register_plugin(SshKeys)
+register_plugin(SqliteHunter)
+register_plugin(Mtime)
