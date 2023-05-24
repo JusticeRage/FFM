@@ -162,6 +162,9 @@ class RunShScript(RemoteScript):
 
     def _get_command_line(self):
         return "{interpreter} -s {args} <<'__EOF__'\r\n{script}\r\n__EOF__"
+    
+    def _get_output_cleaner(self):
+        pass
 
 # -----------------------------------------------------------------------------
 
