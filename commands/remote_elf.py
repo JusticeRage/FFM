@@ -51,10 +51,10 @@ except Exception, e:
             raise RuntimeError("%s not found!" % self.program)
         # Construct the original command line of the program (with proper argv[0]).
         self.program_args = [os.path.basename(args[1])] + [a for a in args[2:]]
-        if not check_command_existence("python"):
-            raise RuntimeError("Python is not present on the machine!")
+        if not check_command_existence("python2.7"):
+            raise RuntimeError("Python2.7 is not present on the machine!")
         # Verify that syscall 319 is supported by the remote kernel:
-        result = shell_exec("python -c 'import ctypes;print ctypes.CDLL(None).syscall(319, \"\", 0)'")
+        result = shell_exec("python2.7 -c 'import ctypes;print ctypes.CDLL(None).syscall(319, \"\", 0)'")
         if int(result) == -1:
             raise RuntimeError("The remote kernel doesn't support the create_memfd syscall!")
 
@@ -63,7 +63,7 @@ except Exception, e:
                                                        chunk_size=self.chunk_size)
 
         # Create a Python process reading a script from stdin
-        os.write(context.active_session.master, "python - <<'__EOF__'\r\np = ''\r\n".encode("UTF-8"))
+        os.write(context.active_session.master, "python2.7 - <<'__EOF__'\r\np = ''\r\n".encode("UTF-8"))
 
         # Send the program bytes in base64 as a "p" variable in the script to run.
         with open(self.program, 'rb') as f:
@@ -96,7 +96,7 @@ except Exception, e:
 
     @staticmethod
     def description():
-        return "Runs an executable from the local machine in memory."
+        return "Runs an executable from the local machine in memory, requires python2.7 on remote machine."
     
     @staticmethod
     def tag():
