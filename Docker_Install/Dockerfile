@@ -6,7 +6,8 @@ RUN apt update -y
 RUN apt upgrade -y 
 
 #system utils 
-RUN apt install -y curl \
+RUN apt install -y apt-utils \
+    curl \
     gpg \
     openssh-server \
     openssh-client \

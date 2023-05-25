@@ -81,8 +81,9 @@ class PtySpawn(Command):
         pass_command("script /dev/null")
         # Sleep a little bit to allow the pty to be created.
         time.sleep(0.2)
-        pass_command("unset HISTFILE")
+        pass_command("unset HISTFILE HISTFILESIZE HISTSIZE PROMPT_COMMAND")
         pass_command("stty -echo")
+        pass_command("export TERM=xterm")
 
 # -----------------------------------------------------------------------------
 
