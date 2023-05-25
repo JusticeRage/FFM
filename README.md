@@ -51,7 +51,31 @@ post-exploitation phase, but also safeguards the user against mistakes they may 
 It is an instrumentation of the shell. Run `./ffm.py` to activate it and you can start working
 immediately. There are two commands you need to know about:
 
-- Type `!list` to display the commands provided by the harness.
+- Type `!list` to display all the commands provided by the harness.
+- Type `!list tags` to see the differnt tags that commands can be binned under
+````
+!list tags
+List of commands available:
+	 enumeration
+	 execution
+	 help
+	 stealth
+	 transfer
+````
+- You can now type `!list enumeration` (or one of the other tags) to see commands that fall into that category.
+````
+!list enumeration
+List of commands available:
+	!backup-hunter: Hunts for backup files
+	!info: Returns CPU(s), Architecture, Memory, and Kernel Verison for the current machine.
+	!log: Toggles logging the harness' input and output to a file.
+	!mtime: Returns files modified in the last X minutes
+	!os: Prints the distribution of the current machine.
+	!sqlite-hunter: Hunts for sqlite .db files
+	!sshkeys: Hunts for Private and Public SSH keys on the current machine.
+	!suid: Finds SUID, SGID binaries on the current machine.
+
+````
 - Type `SHIFT+TAB` to perform tab completion on the local machine. This may be useful if you're
 ssh'd into a remote computer but need to reference a file that's located on your box.
 
@@ -63,14 +87,25 @@ the commands implemented in FFM will suit you. Everyone has their own way of doi
 tuning the harness to your specific need is likely to require you to modify some of the code
 and/or write a few plugins. A lot of effort went into making sure this is a painless task.
 
-### Commands
+## Commands
 
+### Enumeration Commands
 * `!os` is an extremely simple command that just runs `cat /etc/*release*` to show what OS
 the current machine is running. It is probably most valuable as a demonstration that in the
 context of a hacking harness, you can define aliases that work across machine boundaries.
 SSH into any computer, type `!os` and the command will be run. This plugin is located in 
 `commands/replacement_commands.py` and is a good place to start when you want to learn about
 writing plugins.
+* `!backup-hunter` Hunts for backup files
+* `!info` Returns CPU(s), Architecture, Memory, and Kernel Verison for the current machine.
+* `!log` Toggles logging the harness' input and output to a file.
+* `!mtime` Returns files modified in the last X minutes. For example `!mtime 5` will get all files on the local machine (that you have rights to see) that have been modified in the last 5 minutes
+* `!sqlite-hunter` Hunts for sqlite .db files and other database files
+* `!sshkeys` Hunts for Private and Public SSH keys on the current machine.
+* `!suid` Finds SUID, SGID binaries on the current machine.
+
+### Transfer Commands
+- Commands that help you pull and push files, pretty straight forward.
 * `!download [remote file] [local path]` gets a file from the remote machine and copies it
 locally through the terminal. This command is a little more complex because more stringent
 error checking is required but it's another plugin you can easily read to get started.
@@ -78,16 +113,29 @@ You can find it in `commands/download_file.py`. Note that it requires `xxd` or `
 machine to function properly.
 * `!upload [local file] [remote path]` works exactly the same as the previous command, 
 except that a local file is put on the remote machine.
-* `!pty` spawns a TTY, which is something you don't want in most cases because it tends to 
-leave forensics evidence. However, some commands (`sudo`) or exploits require a TTY to run
-in so this is provided as a convenience. `UNSET HISTFILE HISTFILESIZE HISTSIZE PROMPT_COMMAND` is passed to it as soon as it
-spawns.
+
+
+### Execution Commands 
+
+* `!sh [local script]` Runs a shell script from the local machine in memory.
 * `!py [local script]` executes a local Python script on the remote machine, and does so
 *entirely in memory*. Check out my 
 [other repository](https://github.com/JusticeRage/freedomfighting) for scripts you might
 want to use. This commands uses a multiline syntax with `<<`, which means that pseudo-shells
 that don't support it (Weevely is a good example of that) will break this command quite badly.
-* `!py3` does the exact same thing except for system with python3 
+* `!py3 [local script]` does the exact same thing except for system with python3 
+- Please see below for `!elf` and `!elf3` warnings.
+* `!elf3 [local script]` Runs an executable from the local machine in memory, requires python3 on the remote machine.
+* `!elf [local script]` Runs an executable from the local machine in memory, requires python2.7 on remote machine.
+
+### Stealth Commands 
+- I am fully aware these two modules are the opposite of "stealthy" but it is where they are currently placed until an alternative location can be worked out.  This stealth category will more than likely contain commands that help you blend in better in addition to those commands that might make you stick out.
+* `!pty` spawns a TTY, which is something you don't want in most cases because it tends to 
+leave forensics evidence. However, some commands (`sudo`) or exploits require a TTY to run
+in so this is provided as a convenience. `UNSET HISTFILE HISTFILESIZE HISTSIZE PROMPT_COMMAND` is passed to it as soon as it
+spawns, along with `export TERM=xterm`
+* `!sudo` Invoke sudo without a TTY.
+
 
 Plugins can be further configured by editing `ffm.conf`.
 
