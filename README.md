@@ -80,13 +80,14 @@ machine to function properly.
 except that a local file is put on the remote machine.
 * `!pty` spawns a TTY, which is something you don't want in most cases because it tends to 
 leave forensics evidence. However, some commands (`sudo`) or exploits require a TTY to run
-in so this is provided as a convenience. `UNSET HISTFILE` is passed to it as soon as it
+in so this is provided as a convenience. `UNSET HISTFILE HISTFILESIZE HISTSIZE PROMPT_COMMAND` is passed to it as soon as it
 spawns.
 * `!py [local script]` executes a local Python script on the remote machine, and does so
 *entirely in memory*. Check out my 
 [other repository](https://github.com/JusticeRage/freedomfighting) for scripts you might
 want to use. This commands uses a multiline syntax with `<<`, which means that pseudo-shells
 that don't support it (Weevely is a good example of that) will break this command quite badly.
+* `!py3` does the exact same thing except for system with python3 
 
 Plugins can be further configured by editing `ffm.conf`.
 
@@ -118,8 +119,13 @@ sophisticated.
 
 `CTRL+R` is not implemented yet and we all miss it dearly.
 
-There is currently no way to run ELFs in memory on a remote machine. This is high on the
-ToDo list.
+`!elf` and `!elf3` are modules that allow you to run an elf in memory on the target system,
+the modules currently are working but tested in a limited capacity. After execution of the 
+modules the shell will hang until the timeout limit is reached before returning control 
+back to the user.  However, dispite having control back it will no longer run any built 
+in linux commands requiring you to either close the terminal (not ideal) or kill the process
+(also not ideal). I am working on improving both these modules, it is high on the priority
+list. 
 
 More problematic is the fact that the framework hangs from time to time. In 99% of the cases,
 this happens when it fails to detect that a command it launched has finished running. Usually,
