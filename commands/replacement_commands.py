@@ -271,8 +271,6 @@ class Mtime(Command):
         else:
             raise RuntimeError("Received %d argument(s), expected 2." % len(args))
         
-
-
     @staticmethod
     def regexp():
         return r"^\s*\!mtime($| )"
@@ -297,9 +295,40 @@ class Mtime(Command):
         shell_exec('find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(self.time), print_output=True)
         write_str("Module Complete.\r\n", LogLevel.WARNING)
 
+#sudo -V | grep "Sudo ver" | grep "1\.[01234567]\.[0-9]\+\|1\.8\.1[0-9]\*\|1\.8\.2[01234567]"
+class SudoV(Command):
+    def __init__(self, *args, **kwargs):
+        pass
 
+    @staticmethod
+    def regexp():
+        return r"^\s*\!sudo-version($| )"
 
+    @staticmethod
+    def name():
+        return "!sudo-version"
 
+    @staticmethod
+    def description():
+        return "Checks for a vulnerable sudo version"
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
+
+    @staticmethod
+    def usage():
+        return "Usage: !sudo-version"
+#this function needs more testing and some reworking, but it is a MVP
+    def execute(self):
+        #bash command will hit off sudo version and return output
+        test_sudo = shell_exec('sudo -V | grep "Sudo ver" | grep "1\.[01234567]\.[0-9]\+\|1\.8\.1[0-9]\*\|1\.8\.2[01234567]"', print_output=False)
+        if len(test_sudo) == 0:
+            write_str("Sudo Version is likely NOT Vulnerable\r\n", LogLevel.WARNING)
+        elif "not found" in test_sudo:
+            write_str("Sudo not found, are you in a container?\r\n", LogLevel.WARNING)
+        else:
+            write_str("Sudo Version might be Vulnerable, examine further\r\n", LogLevel.ERROR)
 
 register_plugin(GetOS)
 register_plugin(PtySpawn)
@@ -310,3 +339,4 @@ register_plugin(SshKeys)
 register_plugin(SqliteHunter)
 register_plugin(Mtime)
 register_plugin(BackupHunter)
+register_plugin(SudoV)
