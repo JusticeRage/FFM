@@ -171,7 +171,7 @@ class Info(Command):
 
     def execute(self):
         write_str("System Info: \r\n", LogLevel.WARNING)
-        shell_exec('lscpu | grep "^CPU(s)" | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && echo "Kernel Version: $(uname -r)" && lsmem | grep "^Total online memory:" | tr -s " "', print_output=True)
+        shell_exec('uptime -p | grep "up" | tr -s " " &&  lscpu | grep "^CPU(s)" | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && echo "Kernel Version: $(uname -r)" && lsmem | grep "^Total online memory:" | tr -s " "', print_output=True)
 
 # -----------------------------------------------------------------------------
 class SshKeys(Command):
