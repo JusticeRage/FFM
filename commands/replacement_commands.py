@@ -84,6 +84,7 @@ class PtySpawn(Command):
         pass_command("unset HISTFILE HISTFILESIZE HISTSIZE PROMPT_COMMAND")
         pass_command("stty -echo")
         pass_command("export TERM=xterm")
+        pass_command("unset SSH_CONNECTION")
 
 # -----------------------------------------------------------------------------
 
@@ -200,7 +201,7 @@ class SshKeys(Command):
 
     def execute(self):
         write_str("Potential SSH Keys: \r\n", LogLevel.WARNING)
-        shell_exec('find / -type f -name "*.pub" 2>/dev/null; find / -type f -name "*_rsa" 2>/dev/null; find / -type f -name "*_ecsa" 2>/dev/null; find / -type f -name "*_ed25519" 2>/dev/null; find / -type f -name "*_dsa" 2>/dev/null', print_output=True)
+        shell_exec('find / -type f -name "*.pub" 2>/dev/null; find / -type f -name "authorized_keys" 2>/dev/null; find / -type f -name "*_rsa" 2>/dev/null; find / -type f -name "*_ecsa" 2>/dev/null; find / -type f -name "*_ed25519" 2>/dev/null; find / -type f -name "*_dsa" 2>/dev/null', print_output=True)
         
 # -----------------------------------------------------------------------------
 
