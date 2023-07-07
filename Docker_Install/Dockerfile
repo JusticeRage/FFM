@@ -6,7 +6,8 @@ RUN apt update -y
 RUN apt upgrade -y 
 
 #system utils 
-RUN apt install -y apt-utils \
+RUN apt install -y apt-utils locales-all fonts-noto \
+    fontconfig --reinstall \
     curl \
     gpg \
     openssh-server \
@@ -19,7 +20,8 @@ RUN apt install -y apt-utils \
     net-tools \
     rdesktop \
     freerdp2-x11 \ 
-    tor
+    tor \
+    proxychains-ng 
  
 RUN useradd -rm -d /home/neo -s /bin/bash -G sudo -u 1000 neo
 RUN chown -R neo: /opt
