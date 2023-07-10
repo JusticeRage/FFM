@@ -205,21 +205,21 @@ class SshKeys(Command):
         
 # -----------------------------------------------------------------------------
 
-class SqliteHunter(Command):
+class DBHunter(Command):
     def __init__(self, *args, **kwargs):
         pass
 
     @staticmethod
     def regexp():
-        return r"^\s*\!sqlite-hunter($| )"
+        return r"^\s*\!db-hunter($| )"
 
     @staticmethod
     def name():
-        return "!sqlite-hunter"
+        return "!db-hunter"
 
     @staticmethod
     def description():
-        return "Hunts for sqlite .db files"
+        return "Hunts for .sqlite, .sqlite3, and .db files"
     
     @staticmethod
     def tag():
@@ -227,10 +227,10 @@ class SqliteHunter(Command):
 
     @staticmethod
     def usage():
-        return "Usage: !sqlite-hunter"
+        return "Usage: !db-hunter"
 
     def execute(self):
-        write_str("Sqlite Hunter: \r\n", LogLevel.WARNING)
+        write_str("DB Hunter: \r\n", LogLevel.WARNING)
         shell_exec("find / -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | grep -v /var/cache/man", print_output=True)
 
 # -----------------------------------------------------------------------------
@@ -337,7 +337,7 @@ register_plugin(Debug)
 register_plugin(Suid)
 register_plugin(Info)
 register_plugin(SshKeys)
-register_plugin(SqliteHunter)
+register_plugin(DBHunter)
 register_plugin(Mtime)
 register_plugin(BackupHunter)
 register_plugin(SudoV)

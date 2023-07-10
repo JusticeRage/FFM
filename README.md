@@ -71,7 +71,7 @@ List of commands available:
 	!log: Toggles logging the harness' input and output to a file.
 	!mtime: Returns files modified in the last X minutes
 	!os: Prints the distribution of the current machine.
-	!sqlite-hunter: Hunts for sqlite .db files
+	!db-hunter: Hunts for .sqlite, .sqlite3, and .db files
 	!sshkeys: Hunts for Private and Public SSH keys on the current machine.
 	!suid: Finds SUID, SGID binaries on the current machine.
 
@@ -100,7 +100,7 @@ writing plugins.
 * `!info` Returns CPU(s), Architecture, Memory, and Kernel Verison for the current machine.
 * `!log` Toggles logging the harness' input and output to a file.
 * `!mtime` Returns files modified in the last X minutes. For example `!mtime 5` will get all files on the local machine (that you have rights to see) that have been modified in the last 5 minutes
-* `!sqlite-hunter` Hunts for sqlite .db files and other database files
+* `!db-hunter` Hunts for .sqlite, .sqlite3, and .db files and other database files
 * `!sshkeys` Hunts for Private and Public SSH keys on the current machine.
 * `!suid` Finds SUID, SGID binaries on the current machine.
 
