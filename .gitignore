@@ -20,3 +20,6 @@ __pycache__/
 *.pem
 *.key
 *.crt
+
+# My To Do
+todo.txt

@@ -81,10 +81,15 @@ class PtySpawn(Command):
         pass_command("script /dev/null")
         # Sleep a little bit to allow the pty to be created.
         time.sleep(0.2)
+        write_str("Set your rows and cols correctly:\r\n", LogLevel.WARNING)
+        write_str("\tstty -a #in a local window of the same size\r\n")
+        write_str("\tstty rows= cols= \r\n")
         pass_command("unset HISTFILE HISTFILESIZE HISTSIZE PROMPT_COMMAND")
         pass_command("stty -echo")
         pass_command("export TERM=xterm")
         pass_command("unset SSH_CONNECTION")
+
+        
 
 # -----------------------------------------------------------------------------
 
@@ -172,7 +177,7 @@ class Info(Command):
 
     def execute(self):
         write_str("System Info: \r\n", LogLevel.WARNING)
-        shell_exec('uptime -p | grep "up" | tr -s " " &&  lscpu | grep "^CPU(s)" | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && echo "Kernel Version: $(uname -r)" && lsmem | grep "^Total online memory:" | tr -s " "', print_output=True)
+        shell_exec('uptime -p | grep "up" | tr -s " " &&  lscpu | grep "^CPU(s)" | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && echo "Kernel Version: $(uname -r)" && lsmem | grep "^Total online memory:" | tr -s " " || cat /proc/meminfo | grep "^MemTotal:" | tr -s " "', print_output=True)
 
 # -----------------------------------------------------------------------------
 class SshKeys(Command):
