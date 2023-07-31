@@ -301,7 +301,6 @@ class Mtime(Command):
         shell_exec('find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(self.time), print_output=True)
         write_str("Module Complete.\r\n", LogLevel.WARNING)
 
-#sudo -V | grep "Sudo ver" | grep "1\.[01234567]\.[0-9]\+\|1\.8\.1[0-9]\*\|1\.8\.2[01234567]"
 class SudoV(Command):
     def __init__(self, *args, **kwargs):
         pass
@@ -325,9 +324,7 @@ class SudoV(Command):
     @staticmethod
     def usage():
         return "Usage: !sudo-version"
-#this function needs more testing and some reworking, but it is a MVP
     def execute(self):
-        #bash command will hit off sudo version and return output
         test_sudo = shell_exec('sudo -V | grep "Sudo ver" | grep "1\.[01234567]\.[0-9]\+\|1\.8\.1[0-9]\*\|1\.8\.2[01234567]"', print_output=False)
         if len(test_sudo) == 0:
             write_str("Sudo Version is likely NOT Vulnerable\r\n", LogLevel.WARNING)
@@ -335,6 +332,38 @@ class SudoV(Command):
             write_str("Sudo not found, are you in a container?\r\n", LogLevel.WARNING)
         else:
             write_str("Sudo Version might be Vulnerable, examine further\r\n", LogLevel.ERROR)
+
+class VM(Command):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!vm($| )"
+
+    @staticmethod
+    def name():
+        return "!vm"
+
+    @staticmethod
+    def description():
+        return "Checks if device is a Virtual Machine"
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
+
+    @staticmethod
+    def usage():
+        return "Usage: !vm"
+    def execute(self):
+        test_vm = shell_exec('cat /proc/cpuinfo | grep hypervisor', print_output=False)
+        test_vm_1 = shell_exec('cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False)
+        test_vm_2 = shell_exec('dmesg | grep -i hypervisor', print_output=False)
+        if len(test_vm) == 0 and len(test_vm_1) == 0 and len(test_vm_2) == 0:
+            write_str("Virtual Machine: No\r\n", LogLevel.WARNING)
+        else:
+            write_str("Virtual Machine: Yes\r\n", LogLevel.ERROR)
 
 register_plugin(GetOS)
 register_plugin(PtySpawn)
@@ -346,3 +375,4 @@ register_plugin(DBHunter)
 register_plugin(Mtime)
 register_plugin(BackupHunter)
 register_plugin(SudoV)
+register_plugin(VM)
