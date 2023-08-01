@@ -236,7 +236,8 @@ class DBHunter(Command):
 
     def execute(self):
         write_str("DB Hunter: \r\n", LogLevel.WARNING)
-        shell_exec("find / -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | grep -v /var/cache/man", print_output=True)
+        #shell_exec("find / -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | grep -v /var/cache/man", print_output=True)
+        shell_exec('find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /tmp -type f \( -name "*database*" -o -name "*\.db" -o -name "*\.sqlite" -o -name "*\.sqlite3" \) 2>/dev/null', print_output=True)
 
 # -----------------------------------------------------------------------------
 
@@ -365,6 +366,75 @@ class VM(Command):
         else:
             write_str("Virtual Machine: Yes\r\n", LogLevel.ERROR)
 
+class StrangeDirs(Command):
+    stager_script = """
+import sys 
+import os 
+
+strange_dirs = [',.', ', ', '.,', '..', '. ', ' ,', ' .', '  ', ', ,', ', .', ',  ', '. ,', '. .', '.  ', '  ,', '  .', ',']
+total_hits = 0
+if os.path.exists(sys.argv[1]):
+    print('Path exists...continuing')
+    for root, dirs, files in os.walk(sys.argv[1], topdown=True):
+        for name in dirs:
+            for strange_dir in strange_dirs:
+                if strange_dir in os.path.join(root, name):
+                    print('HIT: {}'.format(os.path.join(root,name)))
+                    total_hits += 1
+else:
+    print('Path does not exist')
+    sys.exit(2)
+if total_hits == 0:
+    print('System is clean of strange dirs')
+else:
+    print('Total Hits: {}'.format(total_hits))
+"""
+    def __init__(self, *args, **kwargs):
+        self.path = None
+        if len(args) == 2:
+            self.path = args[1]
+        else:
+            raise RuntimeError("Received %d argument(s), expected 2." % len(args))
+        #make sure python3 is there before moving on 
+        if not check_command_existence("python3"):
+            raise RuntimeError("Python3 is not present on the machine!")
+        #get tempfs folder 
+        workdir = get_tmpfs_folder()
+        if not workdir:
+            raise RuntimeError("Could not find a suitable tmpfs folder to work in!")
+        #create file in the tmpfs with 16 chars of random characters 
+        self.work_file = os.path.join(workdir, ''.join(random.choice(string.ascii_letters) for _ in range(16)))
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!strange-dirs($| )"
+
+    @staticmethod
+    def name():
+        return "!strange-dirs"
+
+    @staticmethod
+    def description():
+        return "Checks device starting at user specified path for strange directories on a host"
+    
+    @staticmethod
+    def tag():
+        return "Enumeration"
+
+    @staticmethod
+    def usage():
+        return "Usage: !strange-dirs [path]"
+    
+    def execute(self):
+        #echo python stager_script into a work_file in a tmpfs
+        shell_exec("echo \"%s\" > %s\n" % (self.stager_script, self.work_file))
+        shell_exec("chmod +x %s" % self.work_file)
+        #execute the script printing the output back to the user
+        shell_exec("python3 %s %s" % (self.work_file, self.path), print_output=True)
+        #get rid of our artifact
+        shell_exec("rm %s" % (self.work_file))
+
+
 register_plugin(GetOS)
 register_plugin(PtySpawn)
 register_plugin(Debug)
@@ -376,3 +446,4 @@ register_plugin(Mtime)
 register_plugin(BackupHunter)
 register_plugin(SudoV)
 register_plugin(VM)
+register_plugin(StrangeDirs)
