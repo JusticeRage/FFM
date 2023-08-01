@@ -56,7 +56,7 @@ except Exception as e:
         # Construct the original command line of the program (with proper argv[0]).
         self.program_args = [os.path.basename(args[1])] + [a for a in args[2:]]
         if not check_command_existence("python3"):
-            raise RuntimeError("Python is not present on the machine!")
+            raise RuntimeError("Python3 is not present on the machine!")
         # Verify that syscall 319 is supported by the remote kernel:
         result = shell_exec('python3 -c "import ctypes;print(ctypes.CDLL(None).syscall(319, \'\', 0))"')
         if int(result) == -1:
