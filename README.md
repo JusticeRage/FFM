@@ -13,6 +13,10 @@ hacking harness' purpose is. All the comments are included in the slides.
 This project is distributed under the terms of the 
 [GPL v3 License](https://www.gnu.org/licenses/gpl.html).
 
+## Full Documentation
+Check out the full documentation for the tool in this repo:
+- https://ice-wzl.gitbook.io/hacknetics/c2-frameworks/ffm-documentation 
+
 ## Installation
 ### Docker Install
  - With the diversity of modern terminal prompts, we highly recommend using `docker` with this tool.
@@ -74,6 +78,7 @@ List of commands available:
 	!db-hunter: Hunts for .sqlite, .sqlite3, and .db files
 	!sshkeys: Hunts for Private and Public SSH keys on the current machine.
 	!suid: Finds SUID, SGID binaries on the current machine.
+	--snip--
 
 ````
 - Type `SHIFT+TAB` to perform tab completion on the local machine. This may be useful if you're
@@ -103,6 +108,9 @@ writing plugins.
 * `!db-hunter` Hunts for .sqlite, .sqlite3, and .db files and other database files
 * `!sshkeys` Hunts for Private and Public SSH keys on the current machine.
 * `!suid` Finds SUID, SGID binaries on the current machine.
+* `!strange-dirs` Checks device starting at user specified path for strange directories on a host
+* `!sudo-version` Checks for a vulnerable sudo version
+* `!vm` Checks if device is a Virtual Machine
 
 ### Transfer Commands
 - Commands that help you pull and push files, pretty straight forward.
@@ -124,7 +132,6 @@ except that a local file is put on the remote machine.
 want to use. This commands uses a multiline syntax with `<<`, which means that pseudo-shells
 that don't support it (Weevely is a good example of that) will break this command quite badly.
 * `!py3 [local script]` does the exact same thing except for system with python3 
-- Please see below for `!elf` and `!elf3` warnings.
 * `!elf3 [local script]` Runs an executable from the local machine in memory, requires python3 on the remote machine.
 * `!elf [local script]` Runs an executable from the local machine in memory, requires python2.7 on remote machine.
 
@@ -166,14 +173,6 @@ sophisticated.
 ## Known issues
 
 `CTRL+R` is not implemented yet and we all miss it dearly.
-
-`!elf` and `!elf3` are modules that allow you to run an elf in memory on the target system,
-the modules currently are working but tested in a limited capacity. After execution of the 
-modules the shell will hang until the timeout limit is reached before returning control 
-back to the user.  However, dispite having control back it will no longer run any built 
-in linux commands requiring you to either close the terminal (not ideal) or kill the process
-(also not ideal). I am working on improving both these modules, it is high on the priority
-list. 
 
 More problematic is the fact that the framework hangs from time to time. In 99% of the cases,
 this happens when it fails to detect that a command it launched has finished running. Usually,

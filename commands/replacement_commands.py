@@ -206,7 +206,7 @@ class SshKeys(Command):
 
     def execute(self):
         write_str("Potential SSH Keys: \r\n", LogLevel.WARNING)
-        shell_exec('find / -type f -name "*.pub" 2>/dev/null; find / -type f -name "authorized_keys" 2>/dev/null; find / -type f -name "*_rsa" 2>/dev/null; find / -type f -name "*_ecsa" 2>/dev/null; find / -type f -name "*_ed25519" 2>/dev/null; find / -type f -name "*_dsa" 2>/dev/null', print_output=True)
+        shell_exec('find / -type f -name "*.pub" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "authorized_keys" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_rsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ecsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ed25519" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_dsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null', print_output=True)
         
 # -----------------------------------------------------------------------------
 
@@ -299,8 +299,8 @@ class Mtime(Command):
         return "Usage: !mtime 5"
 
     def execute(self):
+        write_str("Files Modified in the last {}m:\r\n".format(self.time), LogLevel.WARNING)
         shell_exec('find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(self.time), print_output=True)
-        write_str("Module Complete.\r\n", LogLevel.WARNING)
 
 class SudoV(Command):
     def __init__(self, *args, **kwargs):
