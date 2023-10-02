@@ -362,6 +362,7 @@ class VM(Command):
             test_vm = shell_exec('cat /proc/cpuinfo | grep hypervisor', print_output=False)
             test_vm_1 = shell_exec('cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False)
             test_vm_2 = shell_exec('dmesg | grep -i hypervisor', print_output=False)
+            
             if len(test_vm) == 0 and len(test_vm_1) == 0 and len(test_vm_2) == 0:
                 write_str("Virtual Machine: No\r\n", LogLevel.WARNING)
             else:
@@ -369,8 +370,16 @@ class VM(Command):
         else:
             test_vm = shell_exec('cat /proc/cpuinfo | grep hypervisor', print_output=False)
             test_vm_1 = shell_exec('cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False)
-            if len(test_vm) == 0 and len(test_vm_1) == 0 and len(test_vm_2) == 0:
+            if len(test_vm) == 0 and len(test_vm_1) == 0:
                 write_str("Virtual Machine: No\r\n", LogLevel.WARNING)
+            elif len(test_vm) == 0 and len(test_vm_1) > 0:
+                # docker test
+                docker_test = shell_exec('ls -al / | grep .dockerenv', print_output=False)
+                if len(docker_test) == 0:
+                    write_str("Virtual Machine: Likely no", LogLevel.WARNING)
+                    write_str("\r\nDocker/LXC is on the host\r\n", LogLevel.ERROR)
+                else:
+                    write_str("Docker Container Detected\r\n", LogLevel.ERROR)
             else:
                 write_str("Virtual Machine: Yes\r\n", LogLevel.ERROR)
                 
