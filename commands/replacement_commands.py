@@ -237,7 +237,7 @@ class DBHunter(Command):
     def execute(self):
         write_str("DB Hunter: \r\n", LogLevel.WARNING)
         #shell_exec("find / -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | grep -v /var/cache/man", print_output=True)
-        shell_exec('find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /tmp -type f \( -name "*database*" -o -name "*\.db" -o -name "*\.sqlite" -o -name "*\.sqlite3" \) 2>/dev/null', print_output=True)
+        shell_exec('find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /opt /tmp -type f \( -name "*database*" -o -name "*\.db" -o -name "*\.sqlite" -o -name "*\.sqlite3" \) 2>/dev/null | grep -v /var/cache/man', print_output=True)
 
 # -----------------------------------------------------------------------------
 
