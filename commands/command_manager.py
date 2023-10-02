@@ -68,18 +68,18 @@ class ListPlugins(Command):
     def execute(self):
         #if !list is provided with no args then print *
         #if !list all is provided then do that as well 
-        write_str("List of commands available:\r\n")
+        write_str("List of commands available:\r\n", LogLevel.WARNING)
         strings = []
         if self.tag == None or self.tag == "all": 
             for c in COMMAND_LIST:
-                strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+                strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
             # Sort the plugins by alphabetical order.
             for s in sorted(strings):
                 write_str(s)
         elif self.tag == "execution":
             for c in COMMAND_LIST:
                 if c.tag() == "Execution":
-                    strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+                    strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
             for s in sorted(strings):
                 write_str(s)
         elif self.tag == "tags":
@@ -90,25 +90,25 @@ class ListPlugins(Command):
         elif self.tag == "transfer":
             for c in COMMAND_LIST:
                 if c.tag() == "Transfer":
-                    strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+                    strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
             for s in sorted(strings):
                 write_str(s)
         elif self.tag == "stealth":
             for c in COMMAND_LIST:
                 if c.tag() == "Stealth":
-                    strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+                    strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
             for s in sorted(strings):
                 write_str(s)
         elif self.tag == "enumeration":
             for c in COMMAND_LIST:
                 if c.tag() == "Enumeration":
-                    strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+                    strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
             for s in sorted(strings):
                 write_str(s)
         elif self.tag == "help":
             for c in COMMAND_LIST:
                 if c.tag() == "Help":
-                    strings.append("\t%s: %s\r\n" % (c.name(), c.description()))
+                    strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
             for s in sorted(strings):
                 write_str(s)
         else:
@@ -148,3 +148,4 @@ for f in glob.glob(os.path.join(folder, "*.py")):
         continue
     with open(f, "rb") as fd:
         exec(compile(fd.read(), f, 'exec'))
+
