@@ -411,7 +411,7 @@ else:
         if len(args) == 2:
             self.path = args[1]
         else:
-            raise RuntimeError("Received %d argument(s), expected 2." % len(args))
+            raise RuntimeError("Received %d argument(s), expected 2. !strange-dirs <path>" % len(args))
         #make sure python3 is there before moving on 
         if not check_command_existence("python3"):
             raise RuntimeError("Python3 is not present on the machine!")
