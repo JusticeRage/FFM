@@ -22,12 +22,14 @@ from model.driver.input_api import *
 from model.plugin.command import Command
 from commands.command_manager import register_plugin
 
+
 class RemoteElf(Command):
     """
     This command executes a local ELF on the remote machine in memory.
     It is done through the create_memfd syscall and a short staging
     Python script which copies the target program into an anonymous file.
     """
+
     # The size of the chunks in which the ELF is transmitted.
     chunk_size = 1024
 
@@ -58,19 +60,27 @@ except Exception, e:
         if not check_command_existence("python2.7"):
             raise RuntimeError("Python2.7 is not present on the machine!")
         # Verify that syscall 319 is supported by the remote kernel:
-        result = shell_exec("python2.7 -c 'import ctypes;print ctypes.CDLL(None).syscall(319, \"\", 0)'")
+        result = shell_exec(
+            "python2.7 -c 'import ctypes;print ctypes.CDLL(None).syscall(319, \"\", 0)'"
+        )
         if int(result) == -1:
-            raise RuntimeError("The remote kernel doesn't support the create_memfd syscall!")
+            raise RuntimeError(
+                "The remote kernel doesn't support the create_memfd syscall!"
+            )
 
     def execute(self):
-        self.stager_script = self.stager_script.format(arguments=str(self.program_args),
-                                                       chunk_size=self.chunk_size)
+        self.stager_script = self.stager_script.format(
+            arguments=str(self.program_args), chunk_size=self.chunk_size
+        )
 
         # Create a Python process reading a script from stdin
-        os.write(context.active_session.master, "python2.7 - <<'__EOF__'\r\np = ''\r\n".encode("UTF-8"))
+        os.write(
+            context.active_session.master,
+            "python2.7 - <<'__EOF__'\r\np = ''\r\n".encode("UTF-8"),
+        )
 
         # Send the program bytes in base64 as a "p" variable in the script to run.
-        with open(self.program, 'rb') as f:
+        with open(self.program, "rb") as f:
             data = base64.b64encode(f.read())
             reader = io.BytesIO(data)
             buffy = reader.read(self.chunk_size)
@@ -82,9 +92,11 @@ except Exception, e:
             write_str("\r")  # Add the carriage return after the tqdm progress bar.
 
         # Copy the actual stager and let it run.
-        shell_exec("%s\r\n__EOF__" % self.stager_script,
-                   print_output=True,
-                   output_cleaner=lambda s: s.lstrip(" >"))
+        shell_exec(
+            "%s\r\n__EOF__" % self.stager_script,
+            print_output=True,
+            output_cleaner=lambda s: s.lstrip(" >"),
+        )
 
     @staticmethod
     def regexp():
@@ -92,7 +104,10 @@ except Exception, e:
 
     @staticmethod
     def usage():
-        write_str("Usage: !elf [elf on the local machine] [program arguments]\r\n", LogLevel.WARNING)
+        write_str(
+            "Usage: !elf [elf on the local machine] [program arguments]\r\n",
+            LogLevel.WARNING,
+        )
 
     @staticmethod
     def name():
@@ -101,7 +116,7 @@ except Exception, e:
     @staticmethod
     def description():
         return "Runs an executable from the local machine in memory, requires python2.7 on remote machine."
-    
+
     @staticmethod
     def tag():
         return "Execution"

@@ -18,7 +18,6 @@ from abc import abstractmethod, ABCMeta
 
 
 class Command(metaclass=ABCMeta):
-
     @abstractmethod
     def execute(self):
         raise NotImplementedError("Method execute is not implemented")

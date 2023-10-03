@@ -18,6 +18,7 @@ import re
 
 from model import context
 
+
 def log(s):
     """
     Adds a string to the log file.

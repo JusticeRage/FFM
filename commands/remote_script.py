@@ -32,7 +32,9 @@ class RemoteScript(Command):
         self.output_cleaner = None
 
         if not check_command_existence(self._get_interpreter()):
-            raise RuntimeError("%s is not present on the machine!" % self._get_interpreter())
+            raise RuntimeError(
+                "%s is not present on the machine!" % self._get_interpreter()
+            )
 
     @abstractmethod
     def _get_interpreter(self):
@@ -59,15 +61,21 @@ class RemoteScript(Command):
         return None
 
     def execute(self):
-        with open(self.script, 'r') as f:
+        with open(self.script, "r") as f:
             contents = f.read()
-            shell_exec(self._get_command_line().format(interpreter=self._get_interpreter(),
-                                                       args=self.script_args,
-                                                       script=contents),
-                       print_output=True,
-                       output_cleaner=self._get_output_cleaner())
+            shell_exec(
+                self._get_command_line().format(
+                    interpreter=self._get_interpreter(),
+                    args=self.script_args,
+                    script=contents,
+                ),
+                print_output=True,
+                output_cleaner=self._get_output_cleaner(),
+            )
+
 
 # -----------------------------------------------------------------------------
+
 
 class RunPyScript(RemoteScript):
     @staticmethod
@@ -76,7 +84,10 @@ class RunPyScript(RemoteScript):
 
     @staticmethod
     def usage():
-        write_str("Usage: !py [script on the local machine] [script arguments]\r\n", LogLevel.WARNING)
+        write_str(
+            "Usage: !py [script on the local machine] [script arguments]\r\n",
+            LogLevel.WARNING,
+        )
 
     @staticmethod
     def name():
@@ -92,8 +103,7 @@ class RunPyScript(RemoteScript):
 
     def _get_interpreter(self):
         return "python"
-    
-        
+
     def _get_command_line(self):
         return "{interpreter} - {args} <<'__EOF__'\r\n{script}\r\n__EOF__"
 
@@ -101,7 +111,9 @@ class RunPyScript(RemoteScript):
         # The Python interpreter displays a prompt while reading scripts from stdin. Strip it.
         return lambda s: s.lstrip(" >")
 
+
 # -----------------------------------------------------------------------------
+
 
 class RunPy3Script(RemoteScript):
     @staticmethod
@@ -110,7 +122,10 @@ class RunPy3Script(RemoteScript):
 
     @staticmethod
     def usage():
-        write_str("Usage: !py3 [script on the local machine] [script arguments]\r\n", LogLevel.WARNING)
+        write_str(
+            "Usage: !py3 [script on the local machine] [script arguments]\r\n",
+            LogLevel.WARNING,
+        )
 
     @staticmethod
     def name():
@@ -119,21 +134,21 @@ class RunPy3Script(RemoteScript):
     @staticmethod
     def description():
         return "Runs a python3 script from the local machine in memory."
-    
+
     @staticmethod
     def tag():
         return "Execution"
 
     def _get_interpreter(self):
         return "python3"
-    
-        
+
     def _get_command_line(self):
         return "{interpreter} - {args} <<'__EOF__'\r\n{script}\r\n__EOF__"
 
     def _get_output_cleaner(self):
         # The Python interpreter displays a prompt while reading scripts from stdin. Strip it.
         return lambda s: s.lstrip(" >")
+
 
 # -----------------------------------------------------------------------------
 class RunShScript(RemoteScript):
@@ -143,7 +158,10 @@ class RunShScript(RemoteScript):
 
     @staticmethod
     def usage():
-        write_str("Usage: !sh [script on the local machine] [script arguments]\r\n", LogLevel.WARNING)
+        write_str(
+            "Usage: !sh [script on the local machine] [script arguments]\r\n",
+            LogLevel.WARNING,
+        )
 
     @staticmethod
     def name():
@@ -152,7 +170,7 @@ class RunShScript(RemoteScript):
     @staticmethod
     def description():
         return "Runs a shell script from the local machine in memory."
-    
+
     @staticmethod
     def tag():
         return "Execution"
@@ -162,9 +180,10 @@ class RunShScript(RemoteScript):
 
     def _get_command_line(self):
         return "{interpreter} -s {args} <<'__EOF__'\r\n{script}\r\n__EOF__"
-    
+
     def _get_output_cleaner(self):
         pass
+
 
 # -----------------------------------------------------------------------------
 

@@ -23,14 +23,18 @@ from model.driver.input_api import write_str, LogLevel
 from misc.string_utils import get_commands
 from misc.process_utils import get_children
 
+
 class AssertTorify(Processor):
     """
     This processor makes sure that a select number of network commands are correctly proxied.
     It does its best to ensure that this is only enforced on the local machine.
     """
+
     def __init__(self):
         self.proxy_commands = context.config["AssertTorify"]["proxy_commands"].split()
-        self.network_commands = context.config["AssertTorify"]["network_commands"].split()
+        self.network_commands = context.config["AssertTorify"][
+            "network_commands"
+        ].split()
 
     def apply(self, user_input):
         # Check if the config allows any meaningful processing
@@ -39,13 +43,17 @@ class AssertTorify(Processor):
 
         # Check if the user explicitly asked to bypass this check
         if "!bypass" in user_input:
-            user_input = user_input.replace("!bypass", "")  # Remove this option from the command line
+            user_input = user_input.replace(
+                "!bypass", ""
+            )  # Remove this option from the command line
             return ProcessorAction.FORWARD, user_input
 
         # Verify if the command is being proxyfied.
         commands = get_commands(user_input)
         for c in self.proxy_commands:
-            if c in commands:  # The user remembered to issue a proxy command. All is well.
+            if (
+                c in commands
+            ):  # The user remembered to issue a proxy command. All is well.
                 return ProcessorAction.FORWARD, user_input
 
         # The command is not proxified. Should it be?
@@ -58,9 +66,13 @@ class AssertTorify(Processor):
                     if os.path.basename(child) in self.network_commands:
                         return ProcessorAction.FORWARD, user_input
 
-                write_str("FFM blocked a command which might need to be proxied. Add \"!bypass\" to the "
-                          "command line to override or use:\r\n * " + "\r\n * ".join(self.proxy_commands) +
-                          "\r\n", LogLevel.ERROR)
+                write_str(
+                    'FFM blocked a command which might need to be proxied. Add "!bypass" to the '
+                    "command line to override or use:\r\n * "
+                    + "\r\n * ".join(self.proxy_commands)
+                    + "\r\n",
+                    LogLevel.ERROR,
+                )
                 return ProcessorAction.CANCEL, None
 
         # No dangerous command was issued, proceed.

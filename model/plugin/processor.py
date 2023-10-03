@@ -19,11 +19,14 @@ from enum import Enum
 
 # -----------------------------------------------------------------------------
 
+
 class ProcessorType(Enum):
     INPUT = 1
     OUTPUT = 2
 
+
 # -----------------------------------------------------------------------------
+
 
 class ProcessorAction(Enum):
     """
@@ -33,14 +36,16 @@ class ProcessorAction(Enum):
     CANCEL: Stop processing the data and do not use it (i.e. don't run the
     command typed by the user, or don't display the output).
     """
+
     FORWARD = 1
     STOP_PROCESSING = 2
     CANCEL = 3
 
+
 # -----------------------------------------------------------------------------
 
-class Processor(metaclass=ABCMeta):
 
+class Processor(metaclass=ABCMeta):
     @abstractmethod
     def apply(self, user_input):
         raise NotImplementedError("Method execute is not implemented")

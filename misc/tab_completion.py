@@ -18,6 +18,7 @@
 from model.driver.input_api import *
 from commands.command_manager import COMMAND_LIST
 
+
 def complete(current_word, candidates):
     """
     Completes the current word from a list of candidates.
@@ -36,16 +37,18 @@ def complete(current_word, candidates):
     if len(possible) == 0:
         return None, None
     elif len(possible) == 1:
-        return None, possible[0][len(current_word):]
+        return None, possible[0][len(current_word) :]
 
     # Check whether partial completion can be applied.
     prefix = os.path.commonprefix(possible)
     if prefix:
-        return possible, prefix[len(current_word):]
+        return possible, prefix[len(current_word) :]
     else:
         return possible, None
 
+
 # -----------------------------------------------------------------------------
+
 
 def remote_completion(base_directory):
     """
@@ -57,21 +60,27 @@ def remote_completion(base_directory):
     :return: A list of all the files and folders in the current "path".
     """
     if base_directory:
-        output = shell_exec("ls -1A --color=never --indicator-style=slash "
-                            "-w %d %s 2>/dev/null" % (context.window_size[1], base_directory),
-                            timeout=30)
+        output = shell_exec(
+            "ls -1A --color=never --indicator-style=slash "
+            "-w %d %s 2>/dev/null" % (context.window_size[1], base_directory),
+            timeout=30,
+        )
     else:
-        output = shell_exec("ls -1A --color=never --indicator-style=slash "
-                            "-w %d 2>/dev/null" % context.window_size[1],
-                            timeout=30)
+        output = shell_exec(
+            "ls -1A --color=never --indicator-style=slash "
+            "-w %d 2>/dev/null" % context.window_size[1],
+            timeout=30,
+        )
 
     # Add results from the path if needed
     if not base_directory:
         output += "\r\n"
-        output += shell_exec("ls -1A --color=never --indicator-style=slash -w %d "
-                             "`echo $PATH |tr ':' ' '` |grep -ve ':$\|^$' |sort -u "
-                             "2>/dev/null" % context.window_size[1],
-                             timeout=30)
+        output += shell_exec(
+            "ls -1A --color=never --indicator-style=slash -w %d "
+            "`echo $PATH |tr ':' ' '` |grep -ve ':$\|^$' |sort -u "
+            "2>/dev/null" % context.window_size[1],
+            timeout=30,
+        )
 
     # Add plugins if needed
     if not base_directory:
@@ -79,7 +88,9 @@ def remote_completion(base_directory):
 
     return sorted(output.split("\r\n"))
 
+
 # -----------------------------------------------------------------------------
+
 
 def local_completion(base_directory):
     """

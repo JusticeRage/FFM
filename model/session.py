@@ -26,15 +26,17 @@ from model.driver import input, output
 class Session:
     def __init__(self):
         self.master, self.slave = pty.openpty()
-        #I am unsure here, still tweaking things, leaving the /bin/sh line here for ease of testing.
-        #Need to write some unit tests for this
-        #self.bash = subprocess.Popen([os.getenv("SHELL", "/bin/sh")],
-        self.bash = subprocess.Popen([os.getenv("SHELL", "/bin/bash")],
-                                     preexec_fn=os.setsid,
-                                     stdin=self.slave,
-                                     stdout=self.slave,
-                                     stderr=self.slave,
-                                     universal_newlines=True)
+        # I am unsure here, still tweaking things, leaving the /bin/sh line here for ease of testing.
+        # Need to write some unit tests for this
+        # self.bash = subprocess.Popen([os.getenv("SHELL", "/bin/sh")],
+        self.bash = subprocess.Popen(
+            [os.getenv("SHELL", "/bin/bash")],
+            preexec_fn=os.setsid,
+            stdin=self.slave,
+            stdout=self.slave,
+            stderr=self.slave,
+            universal_newlines=True,
+        )
         self.disable_echo()
         self.input_driver = input.DefaultInputDriver()
         self.output_driver = output.DefaultOutputDriver()

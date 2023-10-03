@@ -21,6 +21,7 @@ from model.driver.input_api import *
 
 # -----------------------------------------------------------------------------
 
+
 class GetOS(Command):
     def __init__(self, *args, **kwargs):
         pass
@@ -36,7 +37,7 @@ class GetOS(Command):
     @staticmethod
     def description():
         return "Prints the distribution of the current machine."
-    
+
     @staticmethod
     def tag():
         return "Enumeration"
@@ -48,7 +49,9 @@ class GetOS(Command):
     def execute(self):
         shell_exec("cat /etc/*release*", print_output=True)
 
+
 # -----------------------------------------------------------------------------
+
 
 class PtySpawn(Command):
     def __init__(self, *args, **kwargs):
@@ -65,7 +68,7 @@ class PtySpawn(Command):
     @staticmethod
     def description():
         return "Spawns a PTY in the current shell."
-    
+
     @staticmethod
     def tag():
         return "Stealth"
@@ -89,9 +92,9 @@ class PtySpawn(Command):
         pass_command("export TERM=xterm")
         pass_command("unset SSH_CONNECTION")
 
-        
 
 # -----------------------------------------------------------------------------
+
 
 class Debug(Command):
     def __init__(self, *args, **kwargs):
@@ -108,7 +111,7 @@ class Debug(Command):
     @staticmethod
     def description():
         return "Prints debug information."
-    
+
     @staticmethod
     def tag():
         return "Help"
@@ -118,10 +121,15 @@ class Debug(Command):
         return "Usage: !dbg"
 
     def execute(self):
-        write_str("Current command prompt: %s\r\n" %
-                  context.active_session.input_driver.last_line.encode("UTF-8"), LogLevel.WARNING)
+        write_str(
+            "Current command prompt: %s\r\n"
+            % context.active_session.input_driver.last_line.encode("UTF-8"),
+            LogLevel.WARNING,
+        )
+
 
 # -----------------------------------------------------------------------------
+
 
 class Suid(Command):
     def __init__(self, *args, **kwargs):
@@ -138,7 +146,7 @@ class Suid(Command):
     @staticmethod
     def description():
         return "Finds SUID, SGID binaries on the current machine."
-    
+
     @staticmethod
     def tag():
         return "Enumeration"
@@ -149,7 +157,11 @@ class Suid(Command):
 
     def execute(self):
         write_str("SUID + SGID Binaries: \r\n", LogLevel.WARNING)
-        shell_exec("find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null; find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null", print_output=True)
+        shell_exec(
+            "find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null; find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null",
+            print_output=True,
+        )
+
 
 class Info(Command):
     def __init__(self, *args, **kwargs):
@@ -166,7 +178,7 @@ class Info(Command):
     @staticmethod
     def description():
         return "Returns CPU(s), Architecture, Memory, and Kernel Verison for the current machine."
-    
+
     @staticmethod
     def tag():
         return "Enumeration"
@@ -177,7 +189,11 @@ class Info(Command):
 
     def execute(self):
         write_str("System Info: \r\n", LogLevel.WARNING)
-        shell_exec('uptime -p | grep "up" | tr -s " " &&  lscpu | grep "^CPU(s)" | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && echo "Kernel Version: $(uname -r)" && lsmem | grep "^Total online memory:" | tr -s " " || cat /proc/meminfo | grep "^MemTotal:" | tr -s " "', print_output=True)
+        shell_exec(
+            'uptime -p | grep "up" | tr -s " " &&  lscpu | grep "^CPU(s)" | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && echo "Kernel Version: $(uname -r)" && lsmem | grep "^Total online memory:" | tr -s " " || cat /proc/meminfo | grep "^MemTotal:" | tr -s " "',
+            print_output=True,
+        )
+
 
 # -----------------------------------------------------------------------------
 class SshKeys(Command):
@@ -195,7 +211,7 @@ class SshKeys(Command):
     @staticmethod
     def description():
         return "Hunts for Private and Public SSH keys on the current machine."
-    
+
     @staticmethod
     def tag():
         return "Enumeration"
@@ -206,9 +222,14 @@ class SshKeys(Command):
 
     def execute(self):
         write_str("Potential SSH Keys: \r\n", LogLevel.WARNING)
-        shell_exec('find / -type f -name "*.pub" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "authorized_keys" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_rsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ecsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ed25519" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_dsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null', print_output=True)
-        
+        shell_exec(
+            'find / -type f -name "*.pub" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "authorized_keys" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_rsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ecsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ed25519" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_dsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null',
+            print_output=True,
+        )
+
+
 # -----------------------------------------------------------------------------
+
 
 class DBHunter(Command):
     def __init__(self, *args, **kwargs):
@@ -225,7 +246,7 @@ class DBHunter(Command):
     @staticmethod
     def description():
         return "Hunts for .sqlite, .sqlite3, and .db files"
-    
+
     @staticmethod
     def tag():
         return "Enumeration"
@@ -236,10 +257,15 @@ class DBHunter(Command):
 
     def execute(self):
         write_str("DB Hunter: \r\n", LogLevel.WARNING)
-        #shell_exec("find / -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | grep -v /var/cache/man", print_output=True)
-        shell_exec('find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /opt /tmp -type f \( -name "*database*" -o -name "*\.db" -o -name "*\.sqlite" -o -name "*\.sqlite3" \) 2>/dev/null | grep -v /var/cache/man', print_output=True)
+        # shell_exec("find / -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | grep -v /var/cache/man", print_output=True)
+        shell_exec(
+            'find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /opt /tmp -type f \( -name "*database*" -o -name "*\.db" -o -name "*\.sqlite" -o -name "*\.sqlite3" \) 2>/dev/null | grep -v /var/cache/man',
+            print_output=True,
+        )
+
 
 # -----------------------------------------------------------------------------
+
 
 class BackupHunter(Command):
     def __init__(self, *args, **kwargs):
@@ -256,7 +282,7 @@ class BackupHunter(Command):
     @staticmethod
     def description():
         return "Hunts for backup files"
-    
+
     @staticmethod
     def tag():
         return "Enumeration"
@@ -267,7 +293,11 @@ class BackupHunter(Command):
 
     def execute(self):
         write_str("Backup Hunter: \r\n", LogLevel.WARNING)
-        shell_exec('find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /tmp -type f \( -name "*backup*" -o -name "*\.bak" -o -name "*\.bck" -o -name "*\.bk" \) 2>/dev/null', print_output=True)
+        shell_exec(
+            'find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /tmp -type f \( -name "*backup*" -o -name "*\.bak" -o -name "*\.bck" -o -name "*\.bk" \) 2>/dev/null',
+            print_output=True,
+        )
+
 
 # -----------------------------------------------------------------------------
 class Mtime(Command):
@@ -277,7 +307,7 @@ class Mtime(Command):
             self.time = args[1]
         else:
             raise RuntimeError("Received %d argument(s), expected 2." % len(args))
-        
+
     @staticmethod
     def regexp():
         return r"^\s*\!mtime($| )"
@@ -289,7 +319,7 @@ class Mtime(Command):
     @staticmethod
     def description():
         return "Returns files modified in the last X minutes"
-    
+
     @staticmethod
     def tag():
         return "Enumeration"
@@ -299,8 +329,16 @@ class Mtime(Command):
         return "Usage: !mtime 5"
 
     def execute(self):
-        write_str("Files Modified in the last {}m:\r\n".format(self.time), LogLevel.WARNING)
-        shell_exec('find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(self.time), print_output=True)
+        write_str(
+            "Files Modified in the last {}m:\r\n".format(self.time), LogLevel.WARNING
+        )
+        shell_exec(
+            'find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(
+                self.time
+            ),
+            print_output=True,
+        )
+
 
 class SudoV(Command):
     def __init__(self, *args, **kwargs):
@@ -317,7 +355,7 @@ class SudoV(Command):
     @staticmethod
     def description():
         return "Checks for a vulnerable sudo version"
-    
+
     @staticmethod
     def tag():
         return "Enumeration"
@@ -325,14 +363,21 @@ class SudoV(Command):
     @staticmethod
     def usage():
         return "Usage: !sudo-version"
+
     def execute(self):
-        test_sudo = shell_exec('sudo -V | grep "Sudo ver" | grep "1\.[01234567]\.[0-9]\+\|1\.8\.1[0-9]\*\|1\.8\.2[01234567]"', print_output=False)
+        test_sudo = shell_exec(
+            'sudo -V | grep "Sudo ver" | grep "1\.[01234567]\.[0-9]\+\|1\.8\.1[0-9]\*\|1\.8\.2[01234567]"',
+            print_output=False,
+        )
         if len(test_sudo) == 0:
             write_str("Sudo Version is likely NOT Vulnerable\r\n", LogLevel.WARNING)
         elif "not found" in test_sudo:
             write_str("Sudo not found, are you in a container?\r\n", LogLevel.WARNING)
         else:
-            write_str("Sudo Version might be Vulnerable, examine further\r\n", LogLevel.ERROR)
+            write_str(
+                "Sudo Version might be Vulnerable, examine further\r\n", LogLevel.ERROR
+            )
+
 
 class VM(Command):
     def __init__(self, *args, **kwargs):
@@ -349,7 +394,7 @@ class VM(Command):
     @staticmethod
     def description():
         return "Checks if device is a Virtual Machine"
-    
+
     @staticmethod
     def tag():
         return "Enumeration"
@@ -357,24 +402,35 @@ class VM(Command):
     @staticmethod
     def usage():
         return "Usage: !vm"
+
     def execute(self):
-        if shell_exec("whoami") == 'root':
-            test_vm = shell_exec('cat /proc/cpuinfo | grep hypervisor', print_output=False)
-            test_vm_1 = shell_exec('cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False)
-            test_vm_2 = shell_exec('dmesg | grep -i hypervisor', print_output=False)
-            
+        if shell_exec("whoami") == "root":
+            test_vm = shell_exec(
+                "cat /proc/cpuinfo | grep hypervisor", print_output=False
+            )
+            test_vm_1 = shell_exec(
+                'cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False
+            )
+            test_vm_2 = shell_exec("dmesg | grep -i hypervisor", print_output=False)
+
             if len(test_vm) == 0 and len(test_vm_1) == 0 and len(test_vm_2) == 0:
                 write_str("Virtual Machine: No\r\n", LogLevel.WARNING)
             else:
                 write_str("Virtual Machine: Yes\r\n", LogLevel.ERROR)
         else:
-            test_vm = shell_exec('cat /proc/cpuinfo | grep hypervisor', print_output=False)
-            test_vm_1 = shell_exec('cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False)
+            test_vm = shell_exec(
+                "cat /proc/cpuinfo | grep hypervisor", print_output=False
+            )
+            test_vm_1 = shell_exec(
+                'cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False
+            )
             if len(test_vm) == 0 and len(test_vm_1) == 0:
                 write_str("Virtual Machine: No\r\n", LogLevel.WARNING)
             elif len(test_vm) == 0 and len(test_vm_1) > 0:
                 # docker test
-                docker_test = shell_exec('ls -al / | grep .dockerenv', print_output=False)
+                docker_test = shell_exec(
+                    "ls -al / | grep .dockerenv", print_output=False
+                )
                 if len(docker_test) == 0:
                     write_str("Virtual Machine: Likely no", LogLevel.WARNING)
                     write_str("\r\nDocker/LXC is on the host\r\n", LogLevel.ERROR)
@@ -382,7 +438,8 @@ class VM(Command):
                     write_str("Docker Container Detected\r\n", LogLevel.ERROR)
             else:
                 write_str("Virtual Machine: Yes\r\n", LogLevel.ERROR)
-                
+
+
 class StrangeDirs(Command):
     stager_script = """
 import sys 
@@ -406,21 +463,26 @@ if total_hits == 0:
 else:
     print('Total Hits: {}'.format(total_hits))
 """
+
     def __init__(self, *args, **kwargs):
         self.path = None
         if len(args) == 2:
             self.path = args[1]
         else:
-            raise RuntimeError("Received %d argument(s), expected 2. !strange-dirs <path>" % len(args))
-        #make sure python3 is there before moving on 
+            raise RuntimeError(
+                "Received %d argument(s), expected 2. !strange-dirs <path>" % len(args)
+            )
+        # make sure python3 is there before moving on
         if not check_command_existence("python3"):
             raise RuntimeError("Python3 is not present on the machine!")
-        #get tempfs folder 
+        # get tempfs folder
         workdir = get_tmpfs_folder()
         if not workdir:
             raise RuntimeError("Could not find a suitable tmpfs folder to work in!")
-        #create file in the tmpfs with 16 chars of random characters 
-        self.work_file = os.path.join(workdir, ''.join(random.choice(string.ascii_letters) for _ in range(16)))
+        # create file in the tmpfs with 16 chars of random characters
+        self.work_file = os.path.join(
+            workdir, "".join(random.choice(string.ascii_letters) for _ in range(16))
+        )
 
     @staticmethod
     def regexp():
@@ -433,7 +495,7 @@ else:
     @staticmethod
     def description():
         return "Checks device starting at user specified path for strange directories on a host"
-    
+
     @staticmethod
     def tag():
         return "Enumeration"
@@ -441,14 +503,14 @@ else:
     @staticmethod
     def usage():
         return "Usage: !strange-dirs [path]"
-    
+
     def execute(self):
-        #echo python stager_script into a work_file in a tmpfs
-        shell_exec("echo \"%s\" > %s\n" % (self.stager_script, self.work_file))
+        # echo python stager_script into a work_file in a tmpfs
+        shell_exec('echo "%s" > %s\n' % (self.stager_script, self.work_file))
         shell_exec("chmod +x %s" % self.work_file)
-        #execute the script printing the output back to the user
+        # execute the script printing the output back to the user
         shell_exec("python3 %s %s" % (self.work_file, self.path), print_output=True)
-        #get rid of our artifact
+        # get rid of our artifact
         shell_exec("rm %s" % (self.work_file))
 
 

@@ -17,6 +17,7 @@
 import os
 from collections import deque
 
+
 def get_children():
     """
     This function returns a list of all FFM's child processes.
@@ -37,7 +38,7 @@ def get_children():
             children.append(f.read().split("\x00")[0])
 
         # Look for additional children
-        with open("/proc/%s/task/%s/children" % (pid, pid), 'r') as f:
+        with open("/proc/%s/task/%s/children" % (pid, pid), "r") as f:
             pids.extend(int(x) for x in f.read().split())
 
     return children

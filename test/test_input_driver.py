@@ -23,6 +23,7 @@ import model.driver.input
 
 OUTPUT_FILE_NAME = "test_output.bin"
 
+
 class TestDriver(unittest.TestCase):
     def setUp(self):
         model.context.stdout = open(OUTPUT_FILE_NAME, "wb")

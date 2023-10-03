@@ -38,7 +38,9 @@ class Upload(Command):
             raise RuntimeError("%s is a directory!" % self.target_file)
 
         if is_directory(self.destination):
-            self.destination = os.path.join(self.destination, os.path.basename(self.target_file))
+            self.destination = os.path.join(
+                self.destination, os.path.basename(self.target_file)
+            )
 
         # Abort if there is already a file with this name.
         if file_exists(self.destination):
@@ -50,7 +52,9 @@ class Upload(Command):
 
     @staticmethod
     def usage():
-        write_str("Usage: !upload [local file] [remote destination]\r\n", LogLevel.WARNING)
+        write_str(
+            "Usage: !upload [local file] [remote destination]\r\n", LogLevel.WARNING
+        )
 
     @staticmethod
     def name():
@@ -65,20 +69,28 @@ class Upload(Command):
         return "Transfer"
 
     def execute(self):
-        with open(self.target_file, 'rb') as f:
+        with open(self.target_file, "rb") as f:
             md5 = hashlib.md5()
-            with tqdm.tqdm(total=os.stat(self.target_file).st_size, unit="o", unit_scale=True) as progress_bar:
+            with tqdm.tqdm(
+                total=os.stat(self.target_file).st_size, unit="o", unit_scale=True
+            ) as progress_bar:
                 contents = f.read(2048)
                 while contents:
                     data = gzip.compress(contents)
                     b64 = base64.b64encode(data)
-                    shell_exec("echo \"%s\" |base64 -d |gunzip >> %s" % (b64.decode("ascii"), self.destination))
+                    shell_exec(
+                        'echo "%s" |base64 -d |gunzip >> %s'
+                        % (b64.decode("ascii"), self.destination)
+                    )
                     md5.update(contents)
                     progress_bar.update(len(contents))
                     contents = f.read(2048)
         md5sum = md5.hexdigest()
         remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % self.destination)
-        write_str("\rLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
+        write_str(
+            "\rLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum),
+            LogLevel.WARNING,
+        )
 
 
 register_plugin(Upload)

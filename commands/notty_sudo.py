@@ -22,36 +22,48 @@ from model.driver.input_api import *
 from model.plugin.command import Command
 from commands.command_manager import register_plugin
 
+
 class Sudo(Command):
     """
     This command does some askpass sleight of hand to allow sudo invocations when no TTY
     is present.
     Inspired from https://github.com/zMarch/Orc/.
     """
+
     def __init__(self, *args):
         if context.active_session.input_driver.last_line:
             raise RuntimeError("A TTY already seems to be present.")
         if len(args) < 3:
-            raise RuntimeError("Received %d argument(s), expected at least 3." % len(args))
+            raise RuntimeError(
+                "Received %d argument(s), expected at least 3." % len(args)
+            )
 
         workdir = get_tmpfs_folder()
         if not workdir:
             raise RuntimeError("Could not find a suitable tmpfs folder to work in!")
-        self.work_file = os.path.join(workdir, ''.join(random.choice(string.ascii_letters) for _ in range(16)))
+        self.work_file = os.path.join(
+            workdir, "".join(random.choice(string.ascii_letters) for _ in range(16))
+        )
         self.password = args[1]
         self.command = args[2:]
 
     def execute(self):
         # Create an askpass script
-        shell_exec('cat <<\'__EOF__\' > %s\n#!/bin/bash\necho \'%s\'\n__EOF__\n' % (self.work_file, self.password))
-        shell_exec('chmod +x %s' % self.work_file)
+        shell_exec(
+            "cat <<'__EOF__' > %s\n#!/bin/bash\necho '%s'\n__EOF__\n"
+            % (self.work_file, self.password)
+        )
+        shell_exec("chmod +x %s" % self.work_file)
         # Call sudo with the askpass script.
         # pass_command is used because sudo has a very weird behavior:
         # > SUDO_ASKPASS=/tmp/test.sh sudo -A id ; echo -n "AAAAAA"
         # [...]
         # sudoAAAAAA: 3 incorrect password attempts
         # The echo data is mangled with sudo's output which screws with FFM's internals.
-        pass_command('SUDO_ASKPASS=%s sudo -A %s ; rm %s' % (self.work_file, " ".join(self.command), self.work_file))
+        pass_command(
+            "SUDO_ASKPASS=%s sudo -A %s ; rm %s"
+            % (self.work_file, " ".join(self.command), self.work_file)
+        )
 
     @staticmethod
     def regexp():
@@ -59,7 +71,10 @@ class Sudo(Command):
 
     @staticmethod
     def usage():
-        write_str("Usage: !sudo [password] [optional sudo arguments] command\r\n", LogLevel.WARNING)
+        write_str(
+            "Usage: !sudo [password] [optional sudo arguments] command\r\n",
+            LogLevel.WARNING,
+        )
 
     @staticmethod
     def name():
@@ -68,7 +83,7 @@ class Sudo(Command):
     @staticmethod
     def description():
         return "Invoke sudo without a TTY."
-    
+
     @staticmethod
     def tag():
         return "Stealth"

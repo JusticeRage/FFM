@@ -19,21 +19,28 @@ from processors.ssh_command_line import SSHOptions
 from processors.processor_manager import ProcessorAction
 from test.fixture.dummy_context import DummyContextTest
 
+
 class TestSSHCommandLineProcessor(DummyContextTest):
     def test_standard_case(self):
         cmdline = "ssh root@host -p2222 -v"
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
-        self.assertEqual(result[1], cmdline + " -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null -T")
+        self.assertEqual(
+            result[1],
+            cmdline + " -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null -T",
+        )
 
     def test_complex_case(self):
         cmdline = "torify ssh root@host -p2222 &"
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
-        self.assertEqual(result[1], "torify ssh root@host -p2222 -oPubkeyAuthentication=no "
-                                    "-oUserKnownHostsFile=/dev/null -T &")
+        self.assertEqual(
+            result[1],
+            "torify ssh root@host -p2222 -oPubkeyAuthentication=no "
+            "-oUserKnownHostsFile=/dev/null -T &",
+        )
 
     def test_option_already_present(self):
         cmdline = "ssh root@host -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null -T -p2222 -v"
@@ -71,16 +78,20 @@ class TestSSHCommandLineProcessor(DummyContextTest):
         self.assertEqual(result[1], None)
 
     def test_username_l_option(self):
-        cmdline = "echo ls |ssh host -p2222 -v -T -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null " \
-                  "-lroot ; echo 'Done!'&"
+        cmdline = (
+            "echo ls |ssh host -p2222 -v -T -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null "
+            "-lroot ; echo 'Done!'&"
+        )
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
         self.assertEqual(result[1], cmdline)
 
     def test_username_l_option_2(self):
-        cmdline = "echo ls |ssh host -p2222 -v -T -l user -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null ; " \
-                  "echo 'Done!'&"
+        cmdline = (
+            "echo ls |ssh host -p2222 -v -T -l user -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null ; "
+            "echo 'Done!'&"
+        )
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
@@ -108,7 +119,9 @@ class TestSSHCommandLineProcessor(DummyContextTest):
         self.assertEqual(result[1], cmdline)
 
     def test_option_config_bypass(self):
-        ssh_command_line.context.config["SSHOptions"]["force_disable_pty_allocation"] = False
+        ssh_command_line.context.config["SSHOptions"][
+            "force_disable_pty_allocation"
+        ] = False
         ssh_command_line.context.config["SSHOptions"]["prevent_ssh_key_leaks"] = False
         ssh_command_line.context.config["SSHOptions"]["disable_known_hosts"] = False
         cmdline = "ssh root@host -p2222 -v"
@@ -118,9 +131,14 @@ class TestSSHCommandLineProcessor(DummyContextTest):
         self.assertEqual(result[1], cmdline)
 
     def test_username_config_bypass(self):
-        ssh_command_line.context.config["SSHOptions"]["require_explicit_username"] = False
+        ssh_command_line.context.config["SSHOptions"][
+            "require_explicit_username"
+        ] = False
         cmdline = "ssh host -p2222 -v"
         p = SSHOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
-        self.assertEqual(result[1], cmdline + " -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null -T")
+        self.assertEqual(
+            result[1],
+            cmdline + " -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null -T",
+        )

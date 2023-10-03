@@ -19,6 +19,7 @@ from model.plugin.command import Command
 from commands.command_manager import register_plugin
 import os
 
+
 class LogCommand(Command):
     def __init__(self, *args):
         self.target_file = None
@@ -29,7 +30,9 @@ class LogCommand(Command):
                     return
                 self.fd = open(self.target_file, "a+b")
             except OSError as e:
-                raise RuntimeError("Could not open %s (%s)." % (self.target_file, str(e)))
+                raise RuntimeError(
+                    "Could not open %s (%s)." % (self.target_file, str(e))
+                )
 
     @staticmethod
     def disable_logging():
@@ -51,9 +54,15 @@ class LogCommand(Command):
         # No argument: display the current logging situation.
         if not self.target_file:
             if not context.log:
-                write_str("This session is not currently logged. Call %s [filename] to enable it.\r\n" % self.name())
+                write_str(
+                    "This session is not currently logged. Call %s [filename] to enable it.\r\n"
+                    % self.name()
+                )
             else:
-                write_str("This session is currently being logged to %s.\r\n" % context.log.name)
+                write_str(
+                    "This session is currently being logged to %s.\r\n"
+                    % context.log.name
+                )
             return
 
         # Disabling the logging
@@ -84,7 +93,7 @@ class LogCommand(Command):
     @staticmethod
     def description():
         return "Toggles logging the harness' input and output to a file."
-    
+
     @staticmethod
     def tag():
         return "Enumeration"

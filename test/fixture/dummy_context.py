@@ -27,21 +27,26 @@ import commands.command_manager as command_manager
 import commands.log_control as log_control
 import misc.logging as logging
 
+
 class DummyContext:
     def __init__(self):
         self.stdout = open("/dev/null", "w")
-        self.config = configparser.ConfigParser(allow_no_value=True, inline_comment_prefixes=("#", ";"))
+        self.config = configparser.ConfigParser(
+            allow_no_value=True, inline_comment_prefixes=("#", ";")
+        )
         self.config.read(os.path.join(os.path.dirname(__file__), "../../ffm.conf"))
         self.log = None
 
     def __del__(self):
         self.stdout.close()
 
+
 class DummyContextTest(unittest.TestCase):
     """
     This fixture makes sure that a dummy context is set up, pointing to /dev/null.
     It prevents the tests from crashing when trying to write to stdout.
     """
+
     def setUp(self):
         self.old_ctx = input_api.context
         self.context = DummyContext()

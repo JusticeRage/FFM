@@ -18,13 +18,14 @@ import re
 from model.plugin.processor import Processor, ProcessorType, ProcessorAction
 from processors.processor_manager import register_processor
 
+
 class TestOutput(Processor):
     """
     This example processor simply highlights the word "password".
     """
 
     def apply(self, output):
-        output = re.sub(b'password', b"\033[91mpassword\033[0m", output)
+        output = re.sub(b"password", b"\033[91mpassword\033[0m", output)
         return ProcessorAction.FORWARD, output
 
     @staticmethod

@@ -16,7 +16,9 @@
 """
 import argparse
 
+
 class SilentArgumentParser(argparse.ArgumentParser):
     """ArgumentParser is subclassed to avoid printing the help on invalid command lines."""
+
     def error(self, message):
         raise RuntimeError(message)

@@ -44,6 +44,7 @@ PROMPT_REGEXP = r"^(\[?[\w-]+@[\w-]+[: ][/~].*)?[$#>] $|^[A-Za-z0-9 .-]+[>$#] $"
 
 # -----------------------------------------------------------------------------
 
+
 def update_window_size(signum=None, frame=None):
     """
     Handler for the WINCH signal. Forwards the new size to all the existing sessions.
@@ -52,7 +53,7 @@ def update_window_size(signum=None, frame=None):
     redraw = context.window_size is not None
     if redraw:
         context.terminal_driver.clear_line()
-    winsz = array.array('h', [0, 0, 0, 0])
+    winsz = array.array("h", [0, 0, 0, 0])
     fcntl.ioctl(sys.stdin, termios.TIOCGWINSZ, winsz, True)
     for s in context.sessions:
         fcntl.ioctl(s.master, termios.TIOCSWINSZ, winsz)
@@ -60,15 +61,27 @@ def update_window_size(signum=None, frame=None):
     if redraw:
         context.terminal_driver.draw_current_line()
 
+
 # -----------------------------------------------------------------------------
+
 
 def main():
     parser = argparse.ArgumentParser(description="Freedom Fighting Mode.")
-    parser.add_argument("--debug-input", action="store_true", help="Toggle debugging of the user input.")
-    parser.add_argument("--debug-output", action="store_true", help="Toggle debugging of the terminal output.")
+    parser.add_argument(
+        "--debug-input", action="store_true", help="Toggle debugging of the user input."
+    )
+    parser.add_argument(
+        "--debug-output",
+        action="store_true",
+        help="Toggle debugging of the terminal output.",
+    )
     parser.add_argument("--log", "-l", help="Log the session to a file.")
-    parser.add_argument("--config", "-c", help="The harness' configuration file.",
-                        default=os.path.join(os.path.dirname(__file__), "ffm.conf"))
+    parser.add_argument(
+        "--config",
+        "-c",
+        help="The harness' configuration file.",
+        default=os.path.join(os.path.dirname(__file__), "ffm.conf"),
+    )
     parser.add_argument("--stdout", help="Redirect stdout to the target file.")
     args = parser.parse_args()
     context.debug_input = args.debug_input
@@ -77,13 +90,20 @@ def main():
 
     # Print the banner
     print(random.choice(BANNERS) + "\n")
-    print("FFM enabled\r\nType !list to see all available commands\r\n!list tags to see commands by module name\r\n!list <tag-name> to see all commands of that tag type\r\nType exit to quit.")
+    print(
+        "FFM enabled\r\nType !list to see all available commands\r\n!list tags to see commands by module name\r\n!list <tag-name> to see all commands of that tag type\r\nType exit to quit."
+    )
 
     # Check that the configuration file exists and is sane.
     if not os.path.exists(args.config):
-        print("Could not find %s. Please provide it with the --config option." % args.config)
+        print(
+            "Could not find %s. Please provide it with the --config option."
+            % args.config
+        )
         return
-    context.config = configparser.ConfigParser(allow_no_value=True, inline_comment_prefixes=("#", ";"))
+    context.config = configparser.ConfigParser(
+        allow_no_value=True, inline_comment_prefixes=("#", ";")
+    )
     context.config.read(args.config)
 
     if args.log or context.config["General"]["log_file"]:
@@ -110,19 +130,26 @@ def main():
     try:
         while context.active_session and context.active_session.bash.poll() is None:
             try:
-                r, w, e = select.select([sys.stdin, context.active_session.master], [], [], 1)
+                r, w, e = select.select(
+                    [sys.stdin, context.active_session.master], [], [], 1
+                )
                 if sys.stdin in r:
                     typed_char = os.read(sys.stdin.fileno(), 1)
                     try:
                         context.active_session.input_driver.handle_input(typed_char)
                     except RuntimeError as e:
-                        os.write(context.stdout.fileno(), b"\r\n%s\r\n" % str(e).encode("UTF-8"))
+                        os.write(
+                            context.stdout.fileno(),
+                            b"\r\n%s\r\n" % str(e).encode("UTF-8"),
+                        )
                 elif context.active_session.master in r:
                     read = os.read(context.active_session.master, 2048)
                     misc.logging.log(read)
                     if context.debug_output:
                         for c in read:
-                            os.write(context.stdout.fileno(), ("%02X " % c).encode("UTF-8"))
+                            os.write(
+                                context.stdout.fileno(), ("%02X " % c).encode("UTF-8")
+                            )
 
                     # Store the last line for future use
                     last = read.split(b"\n")[-1]
@@ -130,19 +157,25 @@ def main():
                     last = re.sub(b"\x1b]0;.*?\x07", b"", last)
                     # Kali terminals add color to the prompt. Strip it.
                     last = re.sub(b"\x1b\[[0-?]*[ -/]*[@-~]", b"", last)
-                    if re.match(PROMPT_REGEXP, last.decode("UTF-8", errors='ignore'), re.UNICODE):
+                    if re.match(
+                        PROMPT_REGEXP, last.decode("UTF-8", errors="ignore"), re.UNICODE
+                    ):
                         # TODO: keep the colors in the saved prompt. This will require all
                         # references of len(last_line) to be updated to ignore escape sequences.
-                        context.active_session.input_driver.last_line = last.decode("UTF-8")
+                        context.active_session.input_driver.last_line = last.decode(
+                            "UTF-8"
+                        )
                     else:
-                        context.active_session.input_driver.last_line = ''
+                        context.active_session.input_driver.last_line = ""
 
                     # Pass the output to the output driver for display after applying output processors.
                     (proceed, output) = apply_processors(read, OUTPUT_PROCESSOR_LIST)
                     if proceed:
                         context.active_session.output_driver.handle_bytes(output)
             except select.error as e:
-                if "[Errno 4]" in str(e):  # Interrupted system call. May be raised if SIGWINCH is received.
+                if "[Errno 4]" in str(
+                    e
+                ):  # Interrupted system call. May be raised if SIGWINCH is received.
                     continue
                 else:
                     raise

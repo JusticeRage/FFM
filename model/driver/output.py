@@ -75,5 +75,8 @@ class DefaultOutputDriver(BaseDriver):
             self._state = None
         else:
             # write_str("Discarded a sequence: 1B 5B 3F \"%s\" %02X" % (self._parameters, c), LogLevel.WARNING)
-            os.write(context.stdout.fileno(), ("\x1B\x5B\x3F" + self._parameters + chr(c)).encode("ascii"))
+            os.write(
+                context.stdout.fileno(),
+                ("\x1B\x5B\x3F" + self._parameters + chr(c)).encode("ascii"),
+            )
             self._state = None

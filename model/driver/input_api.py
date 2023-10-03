@@ -24,14 +24,15 @@ import select
 import string
 import sys
 
-MARKER_STR = ''.join(random.choice(string.ascii_letters) for _ in range(32))
+MARKER_STR = "".join(random.choice(string.ascii_letters) for _ in range(32))
 MARKER = MARKER_STR.encode("UTF-8")
 
-WARNING = '\033[93m'
-ERROR = '\033[91m'
-ENDC = '\033[0m'
+WARNING = "\033[93m"
+ERROR = "\033[91m"
+ENDC = "\033[0m"
 
 # -----------------------------------------------------------------------------
+
 
 def write(b):
     """
@@ -42,14 +43,18 @@ def write(b):
     out_fd = context.stdout.fileno() if context.stdout else sys.stdout.fileno()
     os.write(out_fd, b)
 
+
 # -----------------------------------------------------------------------------
+
 
 class LogLevel(Enum):
     INFO = 0
     WARNING = 1
     ERROR = 2
 
+
 # -----------------------------------------------------------------------------
+
 
 def write_str_internal(s):
     """
@@ -58,9 +63,11 @@ def write_str_internal(s):
     use write_str instead.
     :param s: The string to print.
     """
-    write(s.encode('UTF-8'))
+    write(s.encode("UTF-8"))
+
 
 # -----------------------------------------------------------------------------
+
 
 def write_str(s, level=LogLevel.INFO):
     """
@@ -75,10 +82,12 @@ def write_str(s, level=LogLevel.INFO):
     else:
         msg = s
     # Log the message if a log file is opened:
-    misc.logging.log(msg.encode('UTF-8'))
+    misc.logging.log(msg.encode("UTF-8"))
     write_str_internal(msg)
 
+
 # -----------------------------------------------------------------------------
+
 
 def _read_all_output(timeout):
     """
@@ -96,14 +105,21 @@ def _read_all_output(timeout):
     if not end_marker:
         # No prompt to detect. Add a marker manually to know when to stop reading the output.
         end_marker = MARKER
-        os.write(context.active_session.master, ("echo -n %s\r" % MARKER_STR).encode("UTF-8"))
+        os.write(
+            context.active_session.master, ("echo -n %s\r" % MARKER_STR).encode("UTF-8")
+        )
     # Strip ascii color codes and such when looking for the end marker.
-    while not re.sub(b"\x1b]0;.*?\x07|\x1b\[[0-?]*[ -/]*[@-~]", b"", output).endswith(end_marker):
+    while not re.sub(b"\x1b]0;.*?\x07|\x1b\[[0-?]*[ -/]*[@-~]", b"", output).endswith(
+        end_marker
+    ):
         r, _, _ = select.select([context.active_session.master], [], [], timeout)
         if context.active_session.master in r:
             output += os.read(context.active_session.master, 4096)
         else:
-            write_str("Timeout reached; giving up on trying to capture the output.\r\n", LogLevel.ERROR)
+            write_str(
+                "Timeout reached; giving up on trying to capture the output.\r\n",
+                LogLevel.ERROR,
+            )
             return output.decode("UTF-8")
 
     # The last line of the output should be a new prompt or the marker. Exclude it from
@@ -114,7 +130,9 @@ def _read_all_output(timeout):
     else:  # No new line in the output: it's only the marker then.
         return ""
 
+
 # -----------------------------------------------------------------------------
+
 
 def pass_command(command):
     """
@@ -125,7 +143,9 @@ def pass_command(command):
     """
     os.write(context.active_session.master, ("%s\r" % command).encode("UTF-8"))
 
+
 # -----------------------------------------------------------------------------
+
 
 def shell_exec(command, print_output=False, output_cleaner=None, timeout=300):
     """
@@ -148,7 +168,9 @@ def shell_exec(command, print_output=False, output_cleaner=None, timeout=300):
         write_str(output + "\r\n")
     return output
 
+
 # -----------------------------------------------------------------------------
+
 
 def file_exists(path):
     """
@@ -159,7 +181,9 @@ def file_exists(path):
     output = shell_exec("test -f %s ; echo $?" % path, timeout=30)
     return int(output) == 0
 
+
 # -----------------------------------------------------------------------------
+
 
 def is_directory(path):
     """
@@ -170,7 +194,9 @@ def is_directory(path):
     output = shell_exec("test -d %s ; echo $?" % path, timeout=30)
     return int(output) == 0
 
+
 # -----------------------------------------------------------------------------
+
 
 def check_command_existence(cmd):
     """
@@ -181,7 +207,9 @@ def check_command_existence(cmd):
     output = shell_exec("command -v %s >/dev/null ; echo $?" % cmd, timeout=30)
     return int(output) == 0
 
+
 # -----------------------------------------------------------------------------
+
 
 def get_tmpfs_folder():
     """
@@ -190,7 +218,9 @@ def get_tmpfs_folder():
     - The noexec flag is not set.
     :return: A suitable folder, or None if it couldn't be found.
     """
-    candidates = shell_exec('mount -t tmpfs |grep "rw" |grep -v "noexec" |cut -d" " -f3', timeout=30)
+    candidates = shell_exec(
+        'mount -t tmpfs |grep "rw" |grep -v "noexec" |cut -d" " -f3', timeout=30
+    )
     if candidates:
         return candidates.split("\r\n")[0]
     else:

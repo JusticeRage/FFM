@@ -22,14 +22,18 @@ from model.driver.input_api import write_str, LogLevel
 from misc.string_utils import get_commands, get_arguments, CMDLINE_SEPARATORS
 from misc.silent_argparse import SilentArgumentParser
 
+
 class RdesktopOptions(Processor):
     """
     This processor makes sure that the -U option is present for rdesktop connections.
     This makes sure that the current username will not leak.
     """
+
     def apply(self, user_input):
         # Add the proxy commands to the tokens: torify rdesktop is considered to be a rdesktop call.
-        separators = CMDLINE_SEPARATORS + tuple(context.config["AssertTorify"]["proxy_commands"].split())
+        separators = CMDLINE_SEPARATORS + tuple(
+            context.config["AssertTorify"]["proxy_commands"].split()
+        )
         if "rdesktop" not in get_commands(user_input, separators=separators):
             return ProcessorAction.FORWARD, user_input
 
@@ -47,8 +51,11 @@ class RdesktopOptions(Processor):
         # Block the command if the username is leaking
         if context.config["RdesktopOptions"]["require_explicit_username"]:
             if not args.u:
-                write_str("FFM blocked a command that may leak your local username. "
-                          "Please specify the remote user explicitly with the -u option.\r\n", LogLevel.ERROR)
+                write_str(
+                    "FFM blocked a command that may leak your local username. "
+                    "Please specify the remote user explicitly with the -u option.\r\n",
+                    LogLevel.ERROR,
+                )
                 return ProcessorAction.CANCEL, None
         return ProcessorAction.FORWARD, user_input
 

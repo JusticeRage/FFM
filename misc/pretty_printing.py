@@ -16,6 +16,7 @@
 """
 import os
 
+
 def print_columns(strings, fd, width=80):
     """
     This function prints a series of input strings as columns.
@@ -36,11 +37,15 @@ def print_columns(strings, fd, width=80):
     new_max_size = []
     while True:
         # Divide and round up the result
-        number_of_lines = len(strings) // (number_of_columns + 1) + (len(strings) % (number_of_columns + 1) > 0)
+        number_of_lines = len(strings) // (number_of_columns + 1) + (
+            len(strings) % (number_of_columns + 1) > 0
+        )
         for i in range(number_of_columns + 1):
-            column_strings = strings[i * number_of_lines:(i + 1) * number_of_lines]
+            column_strings = strings[i * number_of_lines : (i + 1) * number_of_lines]
             # Returns the size of the biggest string in the list.
-            if len(column_strings) != 0:  # Some configurations may leave the last column empty.
+            if (
+                len(column_strings) != 0
+            ):  # Some configurations may leave the last column empty.
                 new_max_size.append(len(max(column_strings, key=len)))
         # Size of each line: size of the biggest element of each column plus 2 spaces between each column.
         if sum(new_max_size) + 2 * (len(new_max_size) - 1) >= width:
@@ -55,7 +60,9 @@ def print_columns(strings, fd, width=80):
         return
 
     # Print each line:
-    number_of_lines = len(strings) // number_of_columns + (len(strings) % number_of_columns > 0)  # Divide and round up
+    number_of_lines = len(strings) // number_of_columns + (
+        len(strings) % number_of_columns > 0
+    )  # Divide and round up
     for i in range(number_of_lines):
         line_strings = [strings[j] for j in range(i, len(strings), number_of_lines)]
         for i in range(len(line_strings)):

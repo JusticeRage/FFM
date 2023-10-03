@@ -19,10 +19,15 @@ from processors.rdesktop_command_line import RdesktopOptions
 from processors.processor_manager import ProcessorAction
 from test.fixture.dummy_context import DummyContextTest
 
+
 class TestRdesktopCommandLineProcessor(DummyContextTest):
     def test_option_config_bypass(self):
-        old = rdesktop_command_line.context.config["RdesktopOptions"]["require_explicit_username"]
-        rdesktop_command_line.context.config["RdesktopOptions"]["require_explicit_username"] = False
+        old = rdesktop_command_line.context.config["RdesktopOptions"][
+            "require_explicit_username"
+        ]
+        rdesktop_command_line.context.config["RdesktopOptions"][
+            "require_explicit_username"
+        ] = False
         cmdline = "rdesktop 1.2.3.4"
         p = RdesktopOptions()
         result = p.apply(cmdline)

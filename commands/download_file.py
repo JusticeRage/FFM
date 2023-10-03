@@ -27,6 +27,7 @@ from model.plugin.command import Command
 from model.driver.input_api import *
 from commands.command_manager import register_plugin
 
+
 class Download(Command):
     def __init__(self, *args, **kwargs):
         if len(args) < 2:
@@ -61,7 +62,7 @@ class Download(Command):
     @staticmethod
     def description():
         return "Downloads a file from the remote machine."
-    
+
     @staticmethod
     def tag():
         return "Transfer"
@@ -70,15 +71,25 @@ class Download(Command):
         file_size = int(shell_exec('stat -c "%%s" %s' % self.target_file, False))
         bytes_read = 0
         md5 = hashlib.md5()
-        with open(self.destination, 'wb') as f:
+        with open(self.destination, "wb") as f:
             with tqdm.tqdm(total=file_size, unit="o", unit_scale=True) as progress_bar:
                 while bytes_read < file_size:
                     chunk_size = min(4096, file_size - bytes_read)
                     if check_command_existence("xxd"):
-                        data = shell_exec("xxd -p -l%d -s%d %s" % (chunk_size, bytes_read, self.target_file), False)
+                        data = shell_exec(
+                            "xxd -p -l%d -s%d %s"
+                            % (chunk_size, bytes_read, self.target_file),
+                            False,
+                        )
                     else:
-                        data = shell_exec("od -vt x1 -N%d -j%d %s | awk '{$1=\"\"; print $0}'" % (chunk_size, bytes_read, self.target_file), False)
-                    data = re.sub(r"\r|\n|\r\n", "", data)  # Strip newlines from output.
+                        data = shell_exec(
+                            "od -vt x1 -N%d -j%d %s | awk '{$1=\"\"; print $0}'"
+                            % (chunk_size, bytes_read, self.target_file),
+                            False,
+                        )
+                    data = re.sub(
+                        r"\r|\n|\r\n", "", data
+                    )  # Strip newlines from output.
                     data = bytearray.fromhex(data)
                     progress_bar.update(chunk_size)
                     bytes_read += chunk_size
@@ -86,7 +97,10 @@ class Download(Command):
                     f.write(data)
         md5sum = md5.hexdigest()
         remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % self.target_file)
-        write_str("\rLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum), LogLevel.WARNING)
+        write_str(
+            "\rLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum),
+            LogLevel.WARNING,
+        )
 
 
 register_plugin(Download)

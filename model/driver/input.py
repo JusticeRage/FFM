@@ -27,12 +27,14 @@ from processors.processor_manager import apply_processors, INPUT_PROCESSOR_LIST
 
 # -----------------------------------------------------------------------------
 
+
 class DefaultInputDriver(BaseDriver):
     """
     A partial implementation of a terminal emulator.
     It is based on the state machine located at http://vt100.net/emu/vt500_parser.png.
     Commands will be added on a need basis.
     """
+
     def __init__(self):
         self.input_buffer = ""
         self.cursor_position = 0
@@ -64,7 +66,14 @@ class DefaultInputDriver(BaseDriver):
             return
 
         # Anywhere node in the state machine.
-        if c == 0x18 or c == 0x1A or 0x80 <= c <= 0x8F or 0x91 <= c <= 0x97 or c == 0x99 or c == 0x9A:
+        if (
+            c == 0x18
+            or c == 0x1A
+            or 0x80 <= c <= 0x8F
+            or 0x91 <= c <= 0x97
+            or c == 0x99
+            or c == 0x9A
+        ):
             # Execute
             os.write(context.active_session.master, c.to_bytes(1, "little"))
         elif c == 0x90:
@@ -96,11 +105,14 @@ class DefaultInputDriver(BaseDriver):
         if amount == 0:
             return
         if amount > len(self.input_buffer) - self.cursor_position:
-            self.input_buffer = self.input_buffer[-self.cursor_position:]
+            self.input_buffer = self.input_buffer[-self.cursor_position :]
         elif self.cursor_position == 0:
             self.input_buffer = self.input_buffer[:-amount]
         else:
-            self.input_buffer = self.input_buffer[:-self.cursor_position-amount] + self.input_buffer[-self.cursor_position:]
+            self.input_buffer = (
+                self.input_buffer[: -self.cursor_position - amount]
+                + self.input_buffer[-self.cursor_position :]
+            )
 
     # -----------------------------------------------------------------------------
 
@@ -110,11 +122,14 @@ class DefaultInputDriver(BaseDriver):
         the cursor.
         :param c: The character to append.
         """
-        if self.cursor_position == 0 or c == '\r':
+        if self.cursor_position == 0 or c == "\r":
             self.input_buffer += c
         else:
-            self.input_buffer = self.input_buffer[:-self.cursor_position] + c + \
-                                self.input_buffer[-self.cursor_position:]
+            self.input_buffer = (
+                self.input_buffer[: -self.cursor_position]
+                + c
+                + self.input_buffer[-self.cursor_position :]
+            )
 
     # -----------------------------------------------------------------------------
 
@@ -125,7 +140,7 @@ class DefaultInputDriver(BaseDriver):
         if self.cursor_position == 0:
             return self.input_buffer
         else:
-            return self.input_buffer[:-self.cursor_position]
+            return self.input_buffer[: -self.cursor_position]
 
     # -----------------------------------------------------------------------------
 
@@ -135,10 +150,14 @@ class DefaultInputDriver(BaseDriver):
         for instance if the window has been resized.
         """
         # Calculate where the beginning of the line is (in terms of line wrapping).
-        lines = (len(self.last_line) + len(self.input_buffer) - self.cursor_position) // context.window_size[1]
+        lines = (
+            len(self.last_line) + len(self.input_buffer) - self.cursor_position
+        ) // context.window_size[1]
         if lines > 0:
             write(ansi.CUU(lines))  # Go to the line where the buffer starts.
-        write(ansi.CUB(context.window_size[1]) + ansi.ED(0))  # Delete all after the caret.
+        write(
+            ansi.CUB(context.window_size[1]) + ansi.ED(0)
+        )  # Delete all after the caret.
 
     # -----------------------------------------------------------------------------
 
@@ -169,11 +188,13 @@ class DefaultInputDriver(BaseDriver):
         else:
             write(ansi.SC)  # Save the cursor position.
             # Will the deletion cause the last line to be empty?
-            if (len(self.last_line) - 1 + len(self.input_buffer)) % context.window_size[1] == 0:
-                write_str_internal(self.input_buffer[-self.cursor_position:] + "\r\n")
+            if (len(self.last_line) - 1 + len(self.input_buffer)) % context.window_size[
+                1
+            ] == 0:
+                write_str_internal(self.input_buffer[-self.cursor_position :] + "\r\n")
                 write(ansi.DCH())
             else:
-                write_str_internal(self.input_buffer[-self.cursor_position:])
+                write_str_internal(self.input_buffer[-self.cursor_position :])
                 write(ansi.DCH())
             self.pop(1)
             write(ansi.RC)  # Restore the cursor position.
@@ -199,10 +220,17 @@ class DefaultInputDriver(BaseDriver):
         """
         if self.cursor_position == len(self.input_buffer):
             return
-        while self.cursor_position - 1 < len(self.input_buffer) and self.input_buffer[-self.cursor_position - 1] == " ":
+        while (
+            self.cursor_position - 1 < len(self.input_buffer)
+            and self.input_buffer[-self.cursor_position - 1] == " "
+        ):
             self.backspace()
 
-        s = self.input_buffer if self.cursor_position == 0 else self.input_buffer[:-self.cursor_position]
+        s = (
+            self.input_buffer
+            if self.cursor_position == 0
+            else self.input_buffer[: -self.cursor_position]
+        )
         if not s:
             return
 
@@ -222,7 +250,7 @@ class DefaultInputDriver(BaseDriver):
             return
 
         # Will the addition cause au new line to be created?
-        write_str_internal(c + self.input_buffer[-self.cursor_position:])
+        write_str_internal(c + self.input_buffer[-self.cursor_position :])
         if (len(self.last_line) + len(self.input_buffer)) % context.window_size[1] == 0:
             write(b"\r\n")
         x, y = self._backwards_move(self.cursor_position, len(self.input_buffer))
@@ -262,7 +290,9 @@ class DefaultInputDriver(BaseDriver):
 
     # -----------------------------------------------------------------------------
 
-    def perform_tab_completion(self, display_candidates=False, seed_function=remote_completion):
+    def perform_tab_completion(
+        self, display_candidates=False, seed_function=remote_completion
+    ):
         """
         This function is called when the user wants to complete the currently typed input.
         The current word will be completed as much as possible.
@@ -278,7 +308,7 @@ class DefaultInputDriver(BaseDriver):
         # commands like 'echo test |grep ...' to be parsed correctly.
         current_word = get_last_word(line, " |;") if line else ""
         if "/" in current_word:
-            current_folder = current_word[:current_word.rfind("/") + 1]
+            current_folder = current_word[: current_word.rfind("/") + 1]
             # Only try to complete on the last part of the path:
             current_word = get_last_word(line, boundary=" /")
         else:
@@ -290,12 +320,12 @@ class DefaultInputDriver(BaseDriver):
         if possible_completion:
             for c in possible_completion:
                 # Escaped characters:
-                if c in ' !"$&\'()*,:;<=>?@[\\]^`{|}':
+                if c in " !\"$&'()*,:;<=>?@[\\]^`{|}":
                     self.append("\\")
                     self.print_character("\\")
                 self.append(c)
                 self.print_character(c)
-            if possible_completion[-1] != '/' and not candidates:
+            if possible_completion[-1] != "/" and not candidates:
                 self.append(" ")  # Append a space if this is not a folder name.
                 self.print_character(" ")
 
@@ -360,13 +390,16 @@ class DefaultInputDriver(BaseDriver):
     # -----------------------------------------------------------------------------
 
     def caret_at_eol(self):
-        return (len(self.last_line) + len(self.input_buffer) - self.cursor_position) % context.window_size[1] \
-               == context.window_size[1] - 1
+        return (
+            len(self.last_line) + len(self.input_buffer) - self.cursor_position
+        ) % context.window_size[1] == context.window_size[1] - 1
 
     # -----------------------------------------------------------------------------
 
     def caret_at_sol(self):
-        return (len(self.last_line) + len(self.input_buffer) - self.cursor_position) % context.window_size[1] == 0
+        return (
+            len(self.last_line) + len(self.input_buffer) - self.cursor_position
+        ) % context.window_size[1] == 0
 
     # -----------------------------------------------------------------------------
 
@@ -387,15 +420,26 @@ class DefaultInputDriver(BaseDriver):
             move_length = start_offset
 
         # Case 1: the start and the target are on the same line.
-        if ((start_offset + len(self.last_line)) // context.window_size[1] ==
-            (start_offset + len(self.last_line) - move_length) // context.window_size[1]):
+        if (start_offset + len(self.last_line)) // context.window_size[1] == (
+            start_offset + len(self.last_line) - move_length
+        ) // context.window_size[1]:
             return 0, -move_length
         # Case 2: the start and the target are on different lines.
         else:
-            delta_lines = (len(self.last_line) + start_offset) // context.window_size[1] - \
-                          (len(self.last_line) + start_offset - move_length) // context.window_size[1]
-            delta_columns = (len(self.last_line) + start_offset - move_length) % context.window_size[1] - \
-                            (len(self.last_line) + start_offset) % context.window_size[1]
+            delta_lines = (len(self.last_line) + start_offset) // context.window_size[
+                1
+            ] - (
+                len(self.last_line) + start_offset - move_length
+            ) // context.window_size[
+                1
+            ]
+            delta_columns = (
+                len(self.last_line) + start_offset - move_length
+            ) % context.window_size[1] - (
+                len(self.last_line) + start_offset
+            ) % context.window_size[
+                1
+            ]
             return delta_lines, delta_columns
 
     # -----------------------------------------------------------------------------
@@ -417,15 +461,26 @@ class DefaultInputDriver(BaseDriver):
             move_length = len(self.input_buffer) - start_offset
 
         # Case 1: the start and the target are on the same line.
-        if ((start_offset + len(self.last_line)) // context.window_size[1] ==
-                    (start_offset + len(self.last_line) + move_length) // context.window_size[1]):
+        if (start_offset + len(self.last_line)) // context.window_size[1] == (
+            start_offset + len(self.last_line) + move_length
+        ) // context.window_size[1]:
             return 0, move_length
         # Case 2: the start and the target are on different lines.
         else:
-            delta_lines = (len(self.last_line) + start_offset) // context.window_size[1] - \
-                          (len(self.last_line) + start_offset + move_length) // context.window_size[1]
-            delta_columns = (len(self.last_line) + start_offset + move_length) % context.window_size[1] - \
-                            (len(self.last_line) + start_offset) % context.window_size[1]
+            delta_lines = (len(self.last_line) + start_offset) // context.window_size[
+                1
+            ] - (
+                len(self.last_line) + start_offset + move_length
+            ) // context.window_size[
+                1
+            ]
+            delta_columns = (
+                len(self.last_line) + start_offset + move_length
+            ) % context.window_size[1] - (
+                len(self.last_line) + start_offset
+            ) % context.window_size[
+                1
+            ]
             return delta_lines, delta_columns
 
     # -----------------------------------------------------------------------------
@@ -437,15 +492,23 @@ class DefaultInputDriver(BaseDriver):
         :param word_characters: A list of characters that can be contained in a word.
         """
         # Skip any contiguous non-alphanum that may exist before the cursor.
-        while self.cursor_position + 1 <= len(self.input_buffer) and \
-                self.input_buffer[-self.cursor_position-1] not in word_characters:
+        while (
+            self.cursor_position + 1 <= len(self.input_buffer)
+            and self.input_buffer[-self.cursor_position - 1] not in word_characters
+        ):
             self.cursor_back()
 
         if self.cursor_position == len(self.input_buffer):
             return
 
-        s = self.input_buffer[:-self.cursor_position] if self.cursor_position != 0 else self.input_buffer
-        index = find_last_not_of(s, word_characters) + 1  # + 1 because we want to place the cursor after that char.
+        s = (
+            self.input_buffer[: -self.cursor_position]
+            if self.cursor_position != 0
+            else self.input_buffer
+        )
+        index = (
+            find_last_not_of(s, word_characters) + 1
+        )  # + 1 because we want to place the cursor after that char.
         if index == 0:  # No match found
             self.go_to_sol()
             self.cursor_position = len(self.input_buffer)
@@ -464,13 +527,16 @@ class DefaultInputDriver(BaseDriver):
         :param word_characters: A list of characters that can be contained in a word.
         """
         # Skip any contiguous non-alphanum that may exist at the cursor.
-        while self.cursor_position != 0 and self.input_buffer[-self.cursor_position] not in word_characters:
+        while (
+            self.cursor_position != 0
+            and self.input_buffer[-self.cursor_position] not in word_characters
+        ):
             self.cursor_forward()
 
         if self.cursor_position == 0:  # Already at the end of the buffer.
             return
 
-        s = self.input_buffer[-self.cursor_position:]
+        s = self.input_buffer[-self.cursor_position :]
         index = find_first_not_of(s, word_characters)
         if index < 0:  # No match found
             self.go_to_eol()
@@ -540,8 +606,11 @@ class DefaultInputDriver(BaseDriver):
             # If the user is connected to a shell with no TTY, ask for confirmation to avoid
             # terminating it.
             if c == 0x03 and self.last_line == "":
-                write_str("\r\nWarning: ^C may terminate the current shell! Please confirm by "
-                          "sending it again.\r\n", LogLevel.WARNING)
+                write_str(
+                    "\r\nWarning: ^C may terminate the current shell! Please confirm by "
+                    "sending it again.\r\n",
+                    LogLevel.WARNING,
+                )
                 self.draw_current_line()
                 self.state = self._state_confirm_sigint
             else:
@@ -560,7 +629,7 @@ class DefaultInputDriver(BaseDriver):
         elif c == 0x0B:
             if self.cursor_position > 0:
                 write(ansi.ED(0))
-                self.input_buffer = self.input_buffer[:-self.cursor_position]
+                self.input_buffer = self.input_buffer[: -self.cursor_position]
                 self.cursor_position = 0
         # ^L: clear screen
         elif c == 0x0C:
@@ -579,19 +648,28 @@ class DefaultInputDriver(BaseDriver):
                 self.history_cursor = 0
 
             # Update the log file if there is one:
-            misc.logging.log(("%s\r\n" % self.input_buffer).encode('UTF-8'))
+            misc.logging.log(("%s\r\n" % self.input_buffer).encode("UTF-8"))
 
             if parse_commands(self.input_buffer):
                 # A command has been detected and was executed.
                 # Write a new prompt.
                 self.input_buffer = ""
                 self.draw_current_line()
-                misc.logging.log(self.last_line.encode("UTF-8"))  # Manually write the prompt to the log too.
+                misc.logging.log(
+                    self.last_line.encode("UTF-8")
+                )  # Manually write the prompt to the log too.
             else:
                 # No command detected: forward the input to the TTY.
-                (proceed, command_line) = apply_processors(self.input_buffer, INPUT_PROCESSOR_LIST)
-                if proceed:  # Ignore the command line if one of the processors returned CANCEL.
-                    os.write(context.active_session.master, command_line.encode('UTF-8') + b'\r')
+                (proceed, command_line) = apply_processors(
+                    self.input_buffer, INPUT_PROCESSOR_LIST
+                )
+                if (
+                    proceed
+                ):  # Ignore the command line if one of the processors returned CANCEL.
+                    os.write(
+                        context.active_session.master,
+                        command_line.encode("UTF-8") + b"\r",
+                    )
                     self.input_buffer = ""
                 else:
                     self.draw_current_line()
@@ -606,7 +684,7 @@ class DefaultInputDriver(BaseDriver):
                 # Delete the whole line and rewrite the updated one, while keeping track
                 # of where the cursor should be placed.
                 self.clear_line()
-                self.input_buffer = self.input_buffer[-self.cursor_position:]
+                self.input_buffer = self.input_buffer[-self.cursor_position :]
                 self.cursor_position = len(self.input_buffer)
                 write_str_internal(self.last_line)
                 write(ansi.SC)
@@ -643,7 +721,13 @@ class DefaultInputDriver(BaseDriver):
         elif c == 0x5B:
             self.state = self._state_csi_entry
             self._state_entry_clear()
-        elif 0x30 <= c <= 0x4E or 0x51 <= c <= 0x57 or c == 0x5A or c == 0x5C or 0x60 <= c <= 0x7E:
+        elif (
+            0x30 <= c <= 0x4E
+            or 0x51 <= c <= 0x57
+            or c == 0x5A
+            or c == 0x5C
+            or 0x60 <= c <= 0x7E
+        ):
             self._esc_dispatch(c)
             self.state = self._state_ground
         # Not in the reference state machine. It however appears that recent keyboards map
@@ -659,7 +743,7 @@ class DefaultInputDriver(BaseDriver):
         if c == 0x46:  # ESC O F - END key
             self.go_to_eol()
             self.state = self._state_ground
-        elif c == 0x48: # ESC O H - HOME key
+        elif c == 0x48:  # ESC O H - HOME key
             self.go_to_sol()
             self.state = self._state_ground
         else:
@@ -682,7 +766,9 @@ class DefaultInputDriver(BaseDriver):
             self.go_to_sol()
         elif c == 0x5A:  # Shift + Tab.
             # Tab completion for the local system.
-            self.perform_tab_completion(seed_function=local_completion, display_candidates=True)
+            self.perform_tab_completion(
+                seed_function=local_completion, display_candidates=True
+            )
         else:
             raise RuntimeError("Not implemented! (csi_dispatch, 0x%02X)" % c)
 
@@ -693,7 +779,9 @@ class DefaultInputDriver(BaseDriver):
         if c == 0x7F:
             return
         elif 0x0 <= c <= 0x17 or c == 0x19 or 0x1C <= c <= 0x1F:
-            raise RuntimeError("Not implemented (to handle here)! (CSI Entry, 0x%02X)" % c)
+            raise RuntimeError(
+                "Not implemented (to handle here)! (CSI Entry, 0x%02X)" % c
+            )
         elif 0x40 <= c <= 0x7E:
             self._csi_dispatch(c)
             self.state = self._state_ground
@@ -737,9 +825,15 @@ class DefaultInputDriver(BaseDriver):
         # This test checks whether the buffer contains a 2, 3 or 4-byte unicode character
         # ready to be printed. No need to check the length in case of 2, because we can only
         # enter this state from Ground which initializes the buffer with 1 byte.
-        if (0xC2 <= self.unicode_buffer[0] <= 0xDF) or \
-           (0xE0 <= self.unicode_buffer[0] <= 0xEF and len(self.unicode_buffer) == 3) or \
-           (0xF0 <= self.unicode_buffer[0] <= 0xF4 and len(self.unicode_buffer) == 4):
+        if (
+            (0xC2 <= self.unicode_buffer[0] <= 0xDF)
+            or (
+                0xE0 <= self.unicode_buffer[0] <= 0xEF and len(self.unicode_buffer) == 3
+            )
+            or (
+                0xF0 <= self.unicode_buffer[0] <= 0xF4 and len(self.unicode_buffer) == 4
+            )
+        ):
             unicode_char = self.unicode_buffer.decode("UTF-8")
             self.append(unicode_char)
             self.print_character(unicode_char)

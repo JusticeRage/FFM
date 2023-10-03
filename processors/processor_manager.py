@@ -26,7 +26,10 @@ OUTPUT_PROCESSOR_LIST = set()
 
 def register_processor(plugin):
     if not issubclass(plugin, Processor):
-        write_str("Tried to register %s which is not a valid command!\r\n" % str(plugin), LogLevel.ERROR)
+        write_str(
+            "Tried to register %s which is not a valid command!\r\n" % str(plugin),
+            LogLevel.ERROR,
+        )
         return
     if plugin.type() == ProcessorType.INPUT:
         destination = INPUT_PROCESSOR_LIST
@@ -46,7 +49,9 @@ def register_processor(plugin):
     else:
         destination.add(plugin)
 
+
 # -----------------------------------------------------------------------------
+
 
 def apply_processors(user_input, processors):
     """
@@ -72,6 +77,7 @@ def apply_processors(user_input, processors):
             return False, None
     return True, command_line
 
+
 # -----------------------------------------------------------------------------
 # This section registers all processors at startup.
 # -----------------------------------------------------------------------------
@@ -82,4 +88,4 @@ for f in glob.glob(os.path.join(folder, "*.py")):
     if f == __file__ or f.endswith("__init__.py"):
         continue
     with open(f, "rb") as fd:
-        exec(compile(fd.read(), f, 'exec'))
+        exec(compile(fd.read(), f, "exec"))

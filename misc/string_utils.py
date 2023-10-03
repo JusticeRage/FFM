@@ -24,6 +24,7 @@ alphanum = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZéèà
 
 # -----------------------------------------------------------------------------
 
+
 def find_first_of(s, chars):
     """
     Finds the first instance of a char from a list in the given string.
@@ -36,7 +37,9 @@ def find_first_of(s, chars):
             return index
     return -1
 
+
 # -----------------------------------------------------------------------------
+
 
 def find_first_not_of(s, chars):
     """
@@ -50,7 +53,9 @@ def find_first_not_of(s, chars):
             return index
     return -1
 
+
 # -----------------------------------------------------------------------------
+
 
 def find_last_of(s, chars):
     """
@@ -65,7 +70,9 @@ def find_last_of(s, chars):
             return index
     return -1
 
+
 # -----------------------------------------------------------------------------
+
 
 def find_last_not_of(s, chars):
     """
@@ -80,9 +87,11 @@ def find_last_not_of(s, chars):
             return index
     return -1
 
+
 # -----------------------------------------------------------------------------
 
-def get_last_word(s, boundary=' '):
+
+def get_last_word(s, boundary=" "):
     """
     Returns the last word contained in a string.
     :param s: The string whose last word we want.
@@ -96,11 +105,13 @@ def get_last_word(s, boundary=' '):
         return ""
     index = find_last_of(s, boundary)
     if index != -1:
-        return s[index+1:]
+        return s[index + 1 :]
     else:
         return s
 
+
 # -----------------------------------------------------------------------------
+
 
 def strip(s, strings):
     """
@@ -117,14 +128,16 @@ def strip(s, strings):
             s.strip(str)
         else:
             if s.startswith(str):
-                s = s[len(str):]
+                s = s[len(str) :]
             if s.endswith(str):
-                s = s[:-len(str)]
+                s = s[: -len(str)]
     return s
+
 
 # -----------------------------------------------------------------------------
 
 CMDLINE_SEPARATORS = ("|", ";", "&&", "&")
+
 
 def get_commands(command_line, separators=CMDLINE_SEPARATORS):
     """
@@ -141,7 +154,7 @@ def get_commands(command_line, separators=CMDLINE_SEPARATORS):
     # Normalize the string. We want to add spaces around separators in case
     # we receive input such as "command1&&command2;command3".
     for s in separators:
-        command_line = re.sub(r'%s' % re.escape(s), " %s " % s, command_line)
+        command_line = re.sub(r"%s" % re.escape(s), " %s " % s, command_line)
 
     tokens = command_line.split()
 
@@ -158,15 +171,21 @@ def get_commands(command_line, separators=CMDLINE_SEPARATORS):
         if tokens[i].startswith("`"):
             commands.append(tokens[i].strip("`"))
         for s in separators:
-            if s == tokens[i] and i < len(tokens) - 1 and not tokens[i+1] in separators:
+            if (
+                s == tokens[i]
+                and i < len(tokens) - 1
+                and not tokens[i + 1] in separators
+            ):
                 # The current token is a separator
-                commands.append(tokens[i+1])
+                commands.append(tokens[i + 1])
                 i += 1  # Skip the next token as it was already added
-                break   # No need to test for other separators, we found one.
+                break  # No need to test for other separators, we found one.
 
     return commands
 
+
 # -----------------------------------------------------------------------------
+
 
 def get_arguments(user_input, command):
     """
@@ -185,7 +204,7 @@ def get_arguments(user_input, command):
     cmd_pos = user_input.find(command)
     if cmd_pos == -1:
         return ""
-    cmdline = user_input[cmd_pos + len(command):]
+    cmdline = user_input[cmd_pos + len(command) :]
     pos = find_first_of(cmdline, ("|;&"))
     if pos != -1:
         cmdline = cmdline[:pos]

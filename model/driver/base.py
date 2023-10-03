@@ -17,6 +17,7 @@
 
 import abc
 
+
 class BaseDriver(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def handle_input(self, typed_char):

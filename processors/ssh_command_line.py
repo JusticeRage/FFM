@@ -22,15 +22,19 @@ from model.driver.input_api import write_str, LogLevel
 from misc.string_utils import get_commands, get_arguments, CMDLINE_SEPARATORS
 from misc.silent_argparse import SilentArgumentParser
 
+
 class SSHOptions(Processor):
     """
     This processor makes sure that the -T option is present for ssh connections.
     This limits the amount of forensics evidence created and avoids conflicts between
     the remote TTY and the one emulated by FFM.
     """
+
     def apply(self, user_input):
         # Add the proxy commands to the tokens: torify ssh is considered to be an SSH call.
-        separators = CMDLINE_SEPARATORS + tuple(context.config["AssertTorify"]["proxy_commands"].split())
+        separators = CMDLINE_SEPARATORS + tuple(
+            context.config["AssertTorify"]["proxy_commands"].split()
+        )
         if "ssh" not in get_commands(user_input, separators=separators):
             return ProcessorAction.FORWARD, user_input
 
@@ -39,7 +43,7 @@ class SSHOptions(Processor):
 
         # Use argparse to look for the interesting arguments in the SSH command:
         parser = SilentArgumentParser()
-        parser.add_argument("-l", nargs='?', default=None)
+        parser.add_argument("-l", nargs="?", default=None)
         parser.add_argument("-T", action="store_true")
         parser.add_argument("-o", action="append")
         parser.add_argument("-i", action="append")
@@ -48,7 +52,7 @@ class SSHOptions(Processor):
         parser.add_argument("-D")
         parser.add_argument("-L")
         parser.add_argument("-R")
-        parser.add_argument("positional", nargs='+')
+        parser.add_argument("positional", nargs="+")
         try:
             args, _ = parser.parse_known_args(ssh_cmdline.split())
         except RuntimeError:
@@ -58,21 +62,26 @@ class SSHOptions(Processor):
         # Block the command if the username is leaking
         if context.config["SSHOptions"]["require_explicit_username"]:
             if not any("@" in arg for arg in args.positional) and not args.l:
-                write_str("FFM blocked a command that may leak your local username. "
-                          "Please specify the remote user explicitly.\r\n", LogLevel.ERROR)
+                write_str(
+                    "FFM blocked a command that may leak your local username. "
+                    "Please specify the remote user explicitly.\r\n",
+                    LogLevel.ERROR,
+                )
                 return ProcessorAction.CANCEL, None
 
         # Add -oPubkeyAuthentication=no to prevent SSH keys from leaking.
         if context.config["SSHOptions"]["prevent_ssh_key_leaks"]:
             if not args.i and (
-                    not args.o or
-                    not any("PubkeyAuthentication" in option for option in args.o)
+                not args.o
+                or not any("PubkeyAuthentication" in option for option in args.o)
             ):
                 options_added.append("-oPubkeyAuthentication=no")
 
         # Add -oUserKnownHostsFile=/dev/null to prevent the connexion from being logged there.
         if context.config["SSHOptions"]["disable_known_hosts"]:
-            if not args.o or not any("UserKnownHostsFile" in option for option in args.o):
+            if not args.o or not any(
+                "UserKnownHostsFile" in option for option in args.o
+            ):
                 options_added.append("-oUserKnownHostsFile=/dev/null")
 
         # Add the -T option if it is missing
@@ -81,13 +90,20 @@ class SSHOptions(Processor):
                 options_added.append("-T")
 
         if context.config["SSHOptions"]["strict_host_key_checking"]:
-            if not args.o or not any("StrictHostKeyChecking" in option for option in args.o):
+            if not args.o or not any(
+                "StrictHostKeyChecking" in option for option in args.o
+            ):
                 options_added.append("-oStrictHostKeyChecking=no")
 
         if options_added:
-            user_input = user_input.replace(ssh_cmdline, "%s %s" % (ssh_cmdline, " ".join(options_added)), 1)
-            write_str("Notice: the following options were added to the SSH command: %s.\r\n" % ", ".join(options_added),
-                      LogLevel.WARNING)
+            user_input = user_input.replace(
+                ssh_cmdline, "%s %s" % (ssh_cmdline, " ".join(options_added)), 1
+            )
+            write_str(
+                "Notice: the following options were added to the SSH command: %s.\r\n"
+                % ", ".join(options_added),
+                LogLevel.WARNING,
+            )
         return ProcessorAction.FORWARD, user_input
 
     @staticmethod

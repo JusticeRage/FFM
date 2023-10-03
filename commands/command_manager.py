@@ -23,9 +23,13 @@ from model.driver.input_api import write_str, LogLevel
 
 COMMAND_LIST = set()
 
+
 def register_plugin(plugin):
     if not issubclass(plugin, Command):
-        write_str("Tried to register %s which is not a valid command!\r\n" % str(plugin), LogLevel.ERROR)
+        write_str(
+            "Tried to register %s which is not a valid command!\r\n" % str(plugin),
+            LogLevel.ERROR,
+        )
         return
     elif plugin in COMMAND_LIST:
         write_str("Tried to register %s twice!\r\n" % str(plugin), LogLevel.ERROR)
@@ -49,28 +53,32 @@ def parse_commands(command_line):
                 try:
                     command_instance.execute()
                 except Exception as e:
-                    write_str("Command failed with error: %s\r\n" % str(e), LogLevel.WARNING)
+                    write_str(
+                        "Command failed with error: %s\r\n" % str(e), LogLevel.WARNING
+                    )
             return True
     # No commands match, don't do anything.
     return False
 
+
 # -----------------------------------------------------------------------------
+
 
 class ListPlugins(Command):
     def __init__(self, *nargs, **kwargs):
         if len(nargs) == 1:
-            self.tag = None 
+            self.tag = None
         elif len(nargs) == 2:
             self.tag = nargs[1]
         else:
             raise RuntimeError("Received %d argument(s), expected 1 or 2." % len(nargs))
 
     def execute(self):
-        #if !list is provided with no args then print *
-        #if !list all is provided then do that as well 
+        # if !list is provided with no args then print *
+        # if !list all is provided then do that as well
         write_str("List of commands available:\r\n", LogLevel.WARNING)
         strings = []
-        if self.tag == None or self.tag == "all": 
+        if self.tag == None or self.tag == "all":
             for c in COMMAND_LIST:
                 strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
             # Sort the plugins by alphabetical order.
@@ -125,14 +133,18 @@ class ListPlugins(Command):
     @staticmethod
     def description():
         return "Show the list of available commands/module tags."
-    
+
     @staticmethod
     def tag():
         return "Help"
 
     @staticmethod
     def usage():
-        write_str("Usage:\r\n\t!list --> see all commands\r\n\t!list all --> see all commands\r\n\t!list tags --> see different module tags\r\n\t!list <tag-name> --> see commands related to <tag-name>\r\n", LogLevel.INFO)
+        write_str(
+            "Usage:\r\n\t!list --> see all commands\r\n\t!list all --> see all commands\r\n\t!list tags --> see different module tags\r\n\t!list <tag-name> --> see commands related to <tag-name>\r\n",
+            LogLevel.INFO,
+        )
+
 
 # -----------------------------------------------------------------------------
 # This section registers all known commands at startup. It starts by adding
@@ -147,5 +159,4 @@ for f in glob.glob(os.path.join(folder, "*.py")):
     if f == __file__ or f.endswith("__init__.py"):
         continue
     with open(f, "rb") as fd:
-        exec(compile(fd.read(), f, 'exec'))
-
+        exec(compile(fd.read(), f, "exec"))

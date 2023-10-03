@@ -23,10 +23,13 @@ import model.driver.passthrough
 
 OUTPUT_FILE_NAME = "test_output.bin"
 
+
 class TestPassthroughDriver(unittest.TestCase):
     def setUp(self):
         model.context.stdout = open(OUTPUT_FILE_NAME, "wb")
-        self.driver = model.driver.passthrough.PassthroughDriver(model.context.stdout.fileno())
+        self.driver = model.driver.passthrough.PassthroughDriver(
+            model.context.stdout.fileno()
+        )
         self.output = open(OUTPUT_FILE_NAME, "rb")
 
     def tearDown(self):

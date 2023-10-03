@@ -28,6 +28,7 @@ class PassthroughDriver(BaseDriver):
     This prevents any interpretation of the input which is forwarded to the app until the
     alternate screen is exited.
     """
+
     def __init__(self, fd=None):
         self.fd = fd if fd is not None else model.context.active_session.master
 
