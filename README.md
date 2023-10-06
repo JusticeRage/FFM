@@ -195,6 +195,10 @@ Many plugins have yet to be written, so be sure to share back any improvements y
 FFM. Feel free to open issues not only for bugs, but also if you're trying to do something
 and can't figure out how; this way I'll be able to improve the documentation for everyone.
 
+### To Do
+- Directory download module
+- Single file encryption module
+
 ### Contact
 [![](https://manalyzer.org/static/mail.png)](justicerage@manalyzer[.]org)
 [![](https://manalyzer.org/static/twitter.png)](https://twitter.com/JusticeRage)
