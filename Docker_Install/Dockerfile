@@ -23,6 +23,7 @@ RUN apt install -y apt-utils locales-all fonts-noto \
     tor \
     proxychains-ng 
  
+RUN echo "colorscheme elflord" >> /home/neo/.vimrc
 RUN useradd -rm -d /home/neo -s /bin/bash -G sudo -u 1000 neo
 RUN chown -R neo: /opt
 #creating this dir prevents misc/tab_completion.py from breaking ffm.py
