@@ -514,12 +514,11 @@ else:
         shell_exec("rm %s" % (self.work_file))
 
 
-
 class DirWalk(Command):
     def __init__(self, *args, **kwargs):
         self.path = None
         if len(args) == 2:
-        	self.path = args[1]
+            self.path = args[1]
         else:
             raise RuntimeError(
                 "Received %d argument(s), expected 2. !dirwalk <path>" % len(args)
@@ -546,8 +545,53 @@ class DirWalk(Command):
         return "Usage: !dirwalk [directory-to-start-at]"
 
     def execute(self):
-        shell_exec("ls -R {} 2>/dev/null | grep \":$\" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/    /' -e 's/-/|/'".format(self.path), print_output=True)
+        shell_exec(
+            "ls -R {} 2>/dev/null | grep \":$\" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/    /' -e 's/-/|/'".format(
+                self.path
+            ),
+            print_output=True,
+        )
 
+
+class Shred(Command):
+    def __init__(self, *args, **kwargs):
+        self.file = None
+        if len(args) == 2:
+            self.file = args[1]
+        else:
+            raise RuntimeError(
+                "Received %d argument(s), expected 2. !shred <file>" % len(args)
+            )
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!shred($| )"
+
+    @staticmethod
+    def name():
+        return "!shred"
+
+    @staticmethod
+    def description():
+        return "Secure file deletion with shred or dd/rm"
+
+    @staticmethod
+    def tag():
+        return "Stealth"
+
+    @staticmethod
+    def usage():
+        return "Usage: !shred [file]"
+
+    def execute(self):
+        if not check_command_existence("shred"):
+            shell_exec(f"FN={self.file}")
+            shell_exec(
+                'dd bs=1k count="`du -sk "${FN}" | cut -f1`" if=/dev/urandom > "${FN}"; rm -f "${FN}"',print_output=True,)
+            write_str("{} deleted with dd/rm\r\n".format(self.file), LogLevel.ERROR)
+        else:
+            shell_exec("shred -uz {}".format(self.file))
+            write_str("{} deleted with shred\r\n".format(self.file), LogLevel.ERROR)
 
 
 register_plugin(GetOS)
@@ -563,3 +607,4 @@ register_plugin(SudoV)
 register_plugin(VM)
 register_plugin(StrangeDirs)
 register_plugin(DirWalk)
+register_plugin(Shred)
