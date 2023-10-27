@@ -514,6 +514,42 @@ else:
         shell_exec("rm %s" % (self.work_file))
 
 
+
+class DirWalk(Command):
+    def __init__(self, *args, **kwargs):
+        self.path = None
+        if len(args) == 2:
+        	self.path = args[1]
+        else:
+            raise RuntimeError(
+                "Received %d argument(s), expected 2. !dirwalk <path>" % len(args)
+            )
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!dirwalk($| )"
+
+    @staticmethod
+    def name():
+        return "!dirwalk"
+
+    @staticmethod
+    def description():
+        return "Recursive dir of directories with nice tree format output, also saved to local system."
+
+    @staticmethod
+    def tag():
+        return "Enumeration"
+
+    @staticmethod
+    def usage():
+        return "Usage: !dirwalk [directory-to-start-at]"
+
+    def execute(self):
+        shell_exec("ls -R {} 2>/dev/null | grep \":$\" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/    /' -e 's/-/|/'".format(self.path), print_output=True)
+
+
+
 register_plugin(GetOS)
 register_plugin(PtySpawn)
 register_plugin(Debug)
@@ -526,3 +562,4 @@ register_plugin(BackupHunter)
 register_plugin(SudoV)
 register_plugin(VM)
 register_plugin(StrangeDirs)
+register_plugin(DirWalk)
