@@ -6,7 +6,7 @@ RUN apt update -y
 RUN apt upgrade -y 
 
 #system utils 
-RUN apt install -y apt-utils locales-all fonts-noto \
+RUN apt install -y apt-utils \
     fontconfig --reinstall \
     curl \
     gpg \
