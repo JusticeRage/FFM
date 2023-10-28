@@ -587,7 +587,9 @@ class Shred(Command):
         if not check_command_existence("shred"):
             shell_exec(f"FN={self.file}")
             shell_exec(
-                'dd bs=1k count="`du -sk "${FN}" | cut -f1`" if=/dev/urandom > "${FN}"; rm -f "${FN}"',print_output=True,)
+                'dd bs=1k count="`du -sk "${FN}" | cut -f1`" if=/dev/urandom > "${FN}"; rm -f "${FN}"',
+                print_output=True,
+            )
             write_str("{} deleted with dd/rm\r\n".format(self.file), LogLevel.ERROR)
         else:
             shell_exec("shred -uz {}".format(self.file))
