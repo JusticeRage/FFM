@@ -1,5 +1,4 @@
 # Freedom Fighting Mode (FFM)
-![Screenshot_20231028-100311_Messages](https://github.com/JusticeRage/FFM/assets/75596877/5a61a26c-6659-486f-bddc-50dbd57771e0)
 
 FFM is a hacking harness that you can use during the post-exploitation phase of a red-teaming
 engagement. The idea of the tool was derived from a 
