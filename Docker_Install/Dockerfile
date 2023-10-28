@@ -28,6 +28,9 @@ RUN touch /home/neo/.vimrc
 RUN echo "colorscheme elflord" >> /home/neo/.vimrc
 RUN echo "set ts=4 sw=4" >> /home/neo/.vimrc
 RUN echo "set number" >> /home/neo/.vimrc
+RUN echo "set expandtab" >> /home/neo/.vimrc
+RUN echo "set tabstop=4" >> /home/neo/.vimrc
+RUN echo "set shiftwidth=4" >> /home/neo/.vimrc
 
 RUN chown -R neo: /opt
 #creating this dir prevents misc/tab_completion.py from breaking ffm.py

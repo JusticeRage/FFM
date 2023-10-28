@@ -14,6 +14,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import random 
+import string
 import time
 from commands.command_manager import register_plugin
 from model.plugin.command import Command
@@ -78,7 +80,7 @@ class Suid(Command):
         return "Usage: !suid"
 
     def execute(self):
-        write_str("SUID + SGID Binaries: \r\n", LogLevel.WARNING)
+        write_str("[+] SUID + SGID Binaries: \r\n", LogLevel.WARNING)
         shell_exec(
             "find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null; find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null",
             print_output=True,
@@ -110,7 +112,7 @@ class Info(Command):
         return "Usage: !info"
 
     def execute(self):
-        write_str("System Info: \r\n", LogLevel.WARNING)
+        write_str("[+] System Info: \r\n", LogLevel.WARNING)
         shell_exec(
             'uptime -p | grep "up" | tr -s " " &&  lscpu | grep "^CPU(s)" | tr -s " " && lscpu | grep "^Architecture" | tr -s " " && echo "Kernel Version: $(uname -r)" && lsmem | grep "^Total online memory:" | tr -s " " || cat /proc/meminfo | grep "^MemTotal:" | tr -s " "',
             print_output=True,
@@ -143,7 +145,7 @@ class SshKeys(Command):
         return "Usage: !sshkeys"
 
     def execute(self):
-        write_str("Potential SSH Keys: \r\n", LogLevel.WARNING)
+        write_str("[+] Potential SSH Keys: \r\n", LogLevel.WARNING)
         shell_exec(
             'find / -type f -name "*.pub" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "authorized_keys" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_rsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ecsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ed25519" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_dsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null',
             print_output=True,
@@ -178,7 +180,7 @@ class DBHunter(Command):
         return "Usage: !db-hunter"
 
     def execute(self):
-        write_str("DB Hunter: \r\n", LogLevel.WARNING)
+        write_str("[+] DB Hunter: \r\n", LogLevel.WARNING)
         # shell_exec("find / -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | grep -v /var/cache/man", print_output=True)
         shell_exec(
             'find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /opt /tmp -type f \( -name "*database*" -o -name "*\.db" -o -name "*\.sqlite" -o -name "*\.sqlite3" \) 2>/dev/null | grep -v /var/cache/man',
@@ -214,7 +216,7 @@ class BackupHunter(Command):
         return "Usage: !backup-hunter"
 
     def execute(self):
-        write_str("Backup Hunter: \r\n", LogLevel.WARNING)
+        write_str("[+] Backup Hunter: \r\n", LogLevel.WARNING)
         shell_exec(
             'find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /tmp -type f \( -name "*backup*" -o -name "*\.bak" -o -name "*\.bck" -o -name "*\.bk" \) 2>/dev/null',
             print_output=True,
@@ -252,7 +254,7 @@ class Mtime(Command):
 
     def execute(self):
         write_str(
-            "Files Modified in the last {}m:\r\n".format(self.time), LogLevel.WARNING
+            "[+] Files Modified in the last {}m:\r\n".format(self.time), LogLevel.WARNING
         )
         shell_exec(
             'find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(
@@ -292,12 +294,12 @@ class SudoV(Command):
             print_output=False,
         )
         if len(test_sudo) == 0:
-            write_str("Sudo Version is likely NOT Vulnerable\r\n", LogLevel.WARNING)
+            write_str("[+] Sudo Version is likely NOT Vulnerable\r\n", LogLevel.WARNING)
         elif "not found" in test_sudo:
-            write_str("Sudo not found, are you in a container?\r\n", LogLevel.WARNING)
+            write_str("[!] Sudo not found, are you in a container?\r\n", LogLevel.WARNING)
         else:
             write_str(
-                "Sudo Version might be Vulnerable, examine further\r\n", LogLevel.ERROR
+                "[!] Sudo Version might be Vulnerable, examine further\r\n", LogLevel.ERROR
             )
 
 
@@ -336,9 +338,9 @@ class VM(Command):
             test_vm_2 = shell_exec("dmesg | grep -i hypervisor", print_output=False)
 
             if len(test_vm) == 0 and len(test_vm_1) == 0 and len(test_vm_2) == 0:
-                write_str("Virtual Machine: No\r\n", LogLevel.WARNING)
+                write_str("[+] Virtual Machine: No\r\n", LogLevel.WARNING)
             else:
-                write_str("Virtual Machine: Yes\r\n", LogLevel.ERROR)
+                write_str("[!] Virtual Machine: Yes\r\n", LogLevel.ERROR)
         else:
             test_vm = shell_exec(
                 "cat /proc/cpuinfo | grep hypervisor", print_output=False
@@ -347,19 +349,19 @@ class VM(Command):
                 'cat /proc/mounts | grep -E "docker|overlay|lxc"', print_output=False
             )
             if len(test_vm) == 0 and len(test_vm_1) == 0:
-                write_str("Virtual Machine: No\r\n", LogLevel.WARNING)
+                write_str("[+] Virtual Machine: No\r\n", LogLevel.WARNING)
             elif len(test_vm) == 0 and len(test_vm_1) > 0:
                 # docker test
                 docker_test = shell_exec(
                     "ls -al / | grep .dockerenv", print_output=False
                 )
                 if len(docker_test) == 0:
-                    write_str("Virtual Machine: Likely no", LogLevel.WARNING)
+                    write_str("[+] Virtual Machine: Likely no", LogLevel.WARNING)
                     write_str("\r\nDocker/LXC is on the host\r\n", LogLevel.ERROR)
                 else:
-                    write_str("Docker Container Detected\r\n", LogLevel.ERROR)
+                    write_str("[!] Docker Container Detected\r\n", LogLevel.ERROR)
             else:
-                write_str("Virtual Machine: Yes\r\n", LogLevel.ERROR)
+                write_str("[!] Virtual Machine: Yes\r\n", LogLevel.ERROR)
 
 
 class StrangeDirs(Command):
@@ -381,7 +383,7 @@ else:
     print('Path does not exist')
     sys.exit(2)
 if total_hits == 0:
-    print('System is clean of strange dirs')
+    print('[+] System is clean of strange dirs')
 else:
     print('Total Hits: {}'.format(total_hits))
 """
@@ -396,11 +398,11 @@ else:
             )
         # make sure python3 is there before moving on
         if not check_command_existence("python3"):
-            raise RuntimeError("Python3 is not present on the machine!")
+            raise RuntimeError("[!] Python3 is not present on the machine!")
         # get tempfs folder
         workdir = get_tmpfs_folder()
         if not workdir:
-            raise RuntimeError("Could not find a suitable tmpfs folder to work in!")
+            raise RuntimeError("[!] Could not find a suitable tmpfs folder to work in!")
         # create file in the tmpfs with 16 chars of random characters
         self.work_file = os.path.join(
             workdir, "".join(random.choice(string.ascii_letters) for _ in range(16))
@@ -467,12 +469,19 @@ class DirWalk(Command):
         return "Usage: !dirwalk [directory-to-start-at]"
 
     def execute(self):
-        shell_exec(
+        command_output = shell_exec(
             "ls -R {} 2>/dev/null | grep \":$\" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/    /' -e 's/-/|/'".format(
                 self.path
             ),
             print_output=True,
         )
+        res = ''.join(random.choices(string.ascii_uppercase +
+                             string.digits, k=5))	
+        if not os.path.isdir("dirwalk"):
+            os.mkdir("dirwalk")
+        with open("dirwalk/" + res + ".txt", 'w') as fp:
+            fp.write(command_output)
+        write_str("[+] Wrote dirwalk output to dirwalk/{}\r\n".format(res), LogLevel.WARNING)
 
 
 register_plugin(GetOS)
