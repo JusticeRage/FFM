@@ -158,7 +158,7 @@ class Suid(Command):
     def execute(self):
         write_str("SUID + SGID Binaries: \r\n", LogLevel.WARNING)
         shell_exec(
-            "find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null; find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null",
+            "find / -perm -4000 -type f ! -path '/dev/*' ! -path '/snap/*' -exec ls -la {} \; 2>/dev/null",
             print_output=True,
         )
 
