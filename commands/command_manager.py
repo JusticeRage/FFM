@@ -78,17 +78,17 @@ class ListPlugins(Command):
         # if !list all is provided then do that as well
         write_str("List of commands available:\r\n", LogLevel.WARNING)
         strings = []
-        if self.tag == None or self.tag == "all":
+        if self.tag == None or self.tag == "all" or self.tag == '':
             for c in COMMAND_LIST:
                 strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
             # Sort the plugins by alphabetical order.
-            for s in sorted(strings):
+            for s in sorted(set(strings)):
                 write_str(s)
         elif self.tag == "execution":
             for c in COMMAND_LIST:
                 if c.tag() == "Execution":
                     strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
-            for s in sorted(strings):
+            for s in sorted(set(strings)):
                 write_str(s)
         elif self.tag == "tags":
             for c in COMMAND_LIST:
@@ -99,29 +99,29 @@ class ListPlugins(Command):
             for c in COMMAND_LIST:
                 if c.tag() == "Transfer":
                     strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
-            for s in sorted(strings):
+            for s in sorted(set(strings)):
                 write_str(s)
         elif self.tag == "stealth":
             for c in COMMAND_LIST:
                 if c.tag() == "Stealth":
                     strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
-            for s in sorted(strings):
+            for s in sorted(set(strings)):
                 write_str(s)
         elif self.tag == "enumeration":
             for c in COMMAND_LIST:
                 if c.tag() == "Enumeration":
                     strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
-            for s in sorted(strings):
+            for s in sorted(set(strings)):
                 write_str(s)
         elif self.tag == "help":
             for c in COMMAND_LIST:
                 if c.tag() == "Help":
                     strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
-            for s in sorted(strings):
+            for s in sorted(set(strings)):
                 write_str(s)
         else:
             write_str(self.usage())
-
+        #print(strings)
     @staticmethod
     def regexp():
         return r"^\s*\!list($| )"
