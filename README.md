@@ -1,4 +1,10 @@
-# Freedom Fighting Mode (FFM)
+!list tags
+List of commands available:
+	 enumeration
+	 execution
+	 help
+	 stealth
+	 transfer# Freedom Fighting Mode (FFM)
 
 FFM is a hacking harness that you can use during the post-exploitation phase of a red-teaming
 engagement. The idea of the tool was derived from a 
