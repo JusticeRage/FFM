@@ -16,6 +16,7 @@
 """
 import os
 from commands.command_manager import parse_commands
+from commands.command_manager import ListPlugins
 from model.driver.input_api import write_str
 from test.fixture.dummy_context import DummyContextTest
 
@@ -39,3 +40,15 @@ class TestLogCommand(DummyContextTest):
         with open(f, "r") as fd:
             self.assertEqual(message, fd.read())
         os.remove(f)
+
+    def test_quoted_filename(self):
+        f = "unit test log.log"
+        cmdline = '!log "%s"' % f
+        self.assertTrue(parse_commands(cmdline))
+        self.assertIsNotNone(self.context.log)
+        self.assertEqual(f, self.context.log.name)
+        self.assertTrue(parse_commands("!log off"))
+        os.remove(f)
+
+    def test_invalid_list_tag_does_not_raise(self):
+        ListPlugins("!list", "bogus").execute()

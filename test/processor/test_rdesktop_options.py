@@ -22,9 +22,6 @@ from test.fixture.dummy_context import DummyContextTest
 
 class TestRdesktopCommandLineProcessor(DummyContextTest):
     def test_option_config_bypass(self):
-        old = rdesktop_command_line.context.config["RdesktopOptions"][
-            "require_explicit_username"
-        ]
         rdesktop_command_line.context.config["RdesktopOptions"][
             "require_explicit_username"
         ] = False
@@ -32,6 +29,17 @@ class TestRdesktopCommandLineProcessor(DummyContextTest):
         p = RdesktopOptions()
         result = p.apply(cmdline)
         self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(result[1], cmdline)
+
+    def test_option_config_bypass_from_string_value(self):
+        rdesktop_command_line.context.config["RdesktopOptions"][
+            "require_explicit_username"
+        ] = "no"
+        cmdline = "rdesktop 1.2.3.4"
+        p = RdesktopOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(result[1], cmdline)
 
     def test_standard_case(self):
         cmdline = "rdesktop 1.2.3.4"

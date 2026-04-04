@@ -158,7 +158,7 @@ class Suid(Command):
     def execute(self):
         write_str("SUID + SGID Binaries: \r\n", LogLevel.WARNING)
         shell_exec(
-            "find / -perm -4000 -type f ! -path '/dev/*' ! -path '/snap/*' -exec ls -la {} \; 2>/dev/null",
+            r"find / -perm -4000 -type f ! -path '/dev/*' ! -path '/snap/*' -exec ls -la {} \; 2>/dev/null",
             print_output=True,
         )
 
@@ -259,7 +259,7 @@ class DBHunter(Command):
         write_str("DB Hunter: \r\n", LogLevel.WARNING)
         # shell_exec("find / -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | grep -v /var/cache/man", print_output=True)
         shell_exec(
-            'find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /opt /tmp -type f \( -name "*database*" -o -name "*\.db" -o -name "*\.sqlite" -o -name "*\.sqlite3" \) 2>/dev/null | grep -v /var/cache/man',
+            r'find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /opt /tmp -type f \( -name "*database*" -o -name "*\.db" -o -name "*\.sqlite" -o -name "*\.sqlite3" \) 2>/dev/null | grep -v /var/cache/man',
             print_output=True,
         )
 
@@ -294,7 +294,7 @@ class BackupHunter(Command):
     def execute(self):
         write_str("Backup Hunter: \r\n", LogLevel.WARNING)
         shell_exec(
-            'find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /tmp -type f \( -name "*backup*" -o -name "*\.bak" -o -name "*\.bck" -o -name "*\.bk" \) 2>/dev/null',
+            r'find /var /etc /bin /sbin /home /usr/local/bin /usr/local/sbin /usr/bin /usr/games /usr/sbin /root /tmp -type f \( -name "*backup*" -o -name "*\.bak" -o -name "*\.bck" -o -name "*\.bk" \) 2>/dev/null',
             print_output=True,
         )
 
@@ -366,7 +366,7 @@ class SudoV(Command):
 
     def execute(self):
         test_sudo = shell_exec(
-            'sudo -V | grep "Sudo ver" | grep "1\.[01234567]\.[0-9]\+\|1\.8\.1[0-9]\*\|1\.8\.2[01234567]"',
+            r'sudo -V | grep "Sudo ver" | grep "1\.[01234567]\.[0-9]\+\|1\.8\.1[0-9]\*\|1\.8\.2[01234567]"',
             print_output=False,
         )
         if len(test_sudo) == 0:
@@ -546,7 +546,7 @@ class DirWalk(Command):
 
     def execute(self):
         shell_exec(
-            "ls -R {} 2>/dev/null | grep \":$\" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/    /' -e 's/-/|/'".format(
+            r"ls -R {} 2>/dev/null | grep \":$\" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/    /' -e 's/-/|/'".format(
                 self.path
             ),
             print_output=True,

@@ -51,6 +51,12 @@ class DefaultInputDriver(BaseDriver):
         self.history_cursor = 0
         # A buffer where the current line is saved while the user browses history.
         self.history_tmp = ""
+        self.history_search_active = False
+        self.history_search_query = ""
+        self.history_search_match = ""
+        self.history_search_index = None
+        self.history_search_original_buffer = ""
+        self.history_search_original_cursor = 0
 
     # -----------------------------------------------------------------------------
 
@@ -63,6 +69,10 @@ class DefaultInputDriver(BaseDriver):
         # any subsequent byte is part of the character being read.
         if self.state == self._state_unicode_char:
             self.state(c)
+            return
+
+        if self.history_search_active and self.state == self._state_ground:
+            self._state_history_search(c)
             return
 
         # Anywhere node in the state machine.
@@ -150,9 +160,8 @@ class DefaultInputDriver(BaseDriver):
         for instance if the window has been resized.
         """
         # Calculate where the beginning of the line is (in terms of line wrapping).
-        lines = (
-            len(self.last_line) + len(self.input_buffer) - self.cursor_position
-        ) // context.window_size[1]
+        rendered, cursor_back = self._rendered_line()
+        lines = (len(rendered) - cursor_back) // context.window_size[1]
         if lines > 0:
             write(ansi.CUU(lines))  # Go to the line where the buffer starts.
         write(
@@ -167,8 +176,9 @@ class DefaultInputDriver(BaseDriver):
         It is expected that the line has been erased before calling this function,
         for instance through clear_line()
         """
-        write_str_internal(self.last_line + self.input_buffer)
-        x, y = self._backwards_move(self.cursor_position)
+        rendered, cursor_back = self._rendered_line()
+        write_str_internal(rendered)
+        x, y = self._backwards_move_absolute(cursor_back, len(rendered))
         self.relative_caret_move(x, y)
 
     # -----------------------------------------------------------------------------
@@ -584,6 +594,130 @@ class DefaultInputDriver(BaseDriver):
         self.draw_current_line()
 
     # -----------------------------------------------------------------------------
+
+    def _rendered_line(self):
+        if self.history_search_active:
+            prompt = "(reverse-i-search)`%s': " % self.history_search_query
+            return prompt + self.history_search_match, len(self.history_search_match)
+        return self.last_line + self.input_buffer, self.cursor_position
+
+    # -----------------------------------------------------------------------------
+
+    def _backwards_move_absolute(self, move_length, start_offset):
+        if move_length > start_offset:
+            move_length = start_offset
+
+        if start_offset // context.window_size[1] == (
+            start_offset - move_length
+        ) // context.window_size[1]:
+            return 0, -move_length
+
+        delta_lines = start_offset // context.window_size[1] - (
+            start_offset - move_length
+        ) // context.window_size[1]
+        delta_columns = (start_offset - move_length) % context.window_size[1] - (
+            start_offset
+        ) % context.window_size[1]
+        return delta_lines, delta_columns
+
+    # -----------------------------------------------------------------------------
+
+    def _search_history(self, start_index=None):
+        if not self.history:
+            self.history_search_match = ""
+            self.history_search_index = None
+            return
+
+        if start_index is None:
+            start_index = len(self.history) - 1
+
+        for index in range(start_index, -1, -1):
+            if self.history_search_query in self.history[index]:
+                self.history_search_match = self.history[index]
+                self.history_search_index = index
+                return
+
+        self.history_search_match = ""
+        self.history_search_index = None
+
+    # -----------------------------------------------------------------------------
+
+    def _start_history_search(self):
+        self.clear_line()
+        self.history_search_active = True
+        self.history_search_query = ""
+        self.history_search_match = ""
+        self.history_search_index = None
+        self.history_search_original_buffer = self.input_buffer
+        self.history_search_original_cursor = self.cursor_position
+        self._search_history()
+        self.draw_current_line()
+
+    # -----------------------------------------------------------------------------
+
+    def _advance_history_search(self):
+        if self.history_search_index is None:
+            self._search_history()
+        else:
+            self._search_history(self.history_search_index - 1)
+        self.clear_line()
+        self.draw_current_line()
+
+    # -----------------------------------------------------------------------------
+
+    def _refresh_history_search(self):
+        self._search_history()
+        self.clear_line()
+        self.draw_current_line()
+
+    # -----------------------------------------------------------------------------
+
+    def _cancel_history_search(self):
+        self.clear_line()
+        self.history_search_active = False
+        self.history_search_query = ""
+        self.history_search_match = ""
+        self.history_search_index = None
+        self.input_buffer = self.history_search_original_buffer
+        self.cursor_position = self.history_search_original_cursor
+        self.draw_current_line()
+
+    # -----------------------------------------------------------------------------
+
+    def _accept_history_search(self):
+        self.clear_line()
+        if self.history_search_match:
+            self.input_buffer = self.history_search_match
+            self.cursor_position = 0
+        else:
+            self.input_buffer = self.history_search_original_buffer
+            self.cursor_position = self.history_search_original_cursor
+        self.history_search_active = False
+        self.history_search_query = ""
+        self.history_search_match = ""
+        self.history_search_index = None
+        self.draw_current_line()
+
+    # -----------------------------------------------------------------------------
+
+    def _state_history_search(self, c):
+        if c == 0x12:  # ^R
+            self._advance_history_search()
+        elif c == 0x07 or c == 0x1B:  # ^G or ESC
+            self._cancel_history_search()
+        elif c == 0x0D:  # Enter
+            self._accept_history_search()
+        elif c == 0x7F or c == 0x08:  # Backspace
+            if self.history_search_query:
+                self.history_search_query = self.history_search_query[:-1]
+            self._refresh_history_search()
+        elif 0x20 <= c < 0x7F:
+            self.history_search_query += chr(c)
+            self._refresh_history_search()
+        else:
+            self._cancel_history_search()
+
+    # -----------------------------------------------------------------------------
     # VT500 state machine below.
     # -----------------------------------------------------------------------------
 
@@ -625,6 +759,9 @@ class DefaultInputDriver(BaseDriver):
             # Tab completion for the current system.
             self.perform_tab_completion()
             self.state = self._state_tab
+        # ^R: reverse-search command history
+        elif c == 0x12:
+            self._start_history_search()
         # ^K: clear line starting from the cursor.
         elif c == 0x0B:
             if self.cursor_position > 0:
@@ -769,6 +906,10 @@ class DefaultInputDriver(BaseDriver):
             self.perform_tab_completion(
                 seed_function=local_completion, display_candidates=True
             )
+        elif c == 0x49 or c == 0x4F:
+            # FocusIn / FocusOut reports from terminals that enabled focus tracking.
+            # FFM does not have a local use for them, but ignoring them keeps parsing sane.
+            return
         else:
             raise RuntimeError("Not implemented! (csi_dispatch, 0x%02X)" % c)
 
@@ -779,16 +920,20 @@ class DefaultInputDriver(BaseDriver):
         if c == 0x7F:
             return
         elif 0x0 <= c <= 0x17 or c == 0x19 or 0x1C <= c <= 0x1F:
+            self.state = self._state_ground
             raise RuntimeError(
                 "Not implemented (to handle here)! (CSI Entry, 0x%02X)" % c
             )
         elif 0x40 <= c <= 0x7E:
-            self._csi_dispatch(c)
-            self.state = self._state_ground
+            try:
+                self._csi_dispatch(c)
+            finally:
+                self.state = self._state_ground
         elif 0x30 <= c <= 0x38 or c == 0x3B:
             self.parameters += chr(c)
             self.state = self._state_csi_param
         else:
+            self.state = self._state_ground
             raise RuntimeError("Not implemented! (CSI Entry, 0x%02X)" % c)
 
     # -----------------------------------------------------------------------------
@@ -809,6 +954,7 @@ class DefaultInputDriver(BaseDriver):
             self.parameters = ""
             self.state = self._state_ground
         else:
+            self.state = self._state_ground
             write_str_internal("Parameters: " + self.parameters)
             raise RuntimeError("Not implemented! (CSI Param, 0x%02X)" % c)
 

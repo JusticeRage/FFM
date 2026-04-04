@@ -16,6 +16,7 @@
 """
 import re
 
+from misc.config_utils import get_config_boolean
 from model import context
 
 
@@ -29,8 +30,8 @@ def log(s):
     if not context.log or not s:
         return
 
-    s = re.sub(b"\x1b]0;.*?\x07", b"", s)  # Strip window title updates in all cases.
-    if context.config["General"]["strip_color"]:
-        s = re.sub(b"\x1b\[[0-?]*[ -/]*[@-~]", b"", s)  # Strip ANSI color codes
+    s = re.sub(rb"\x1b]0;.*?\x07", b"", s)  # Strip window title updates in all cases.
+    if get_config_boolean(context.config, "General", "strip_color"):
+        s = re.sub(rb"\x1b\[[0-?]*[ -/]*[@-~]", b"", s)  # Strip ANSI color codes
 
     context.log.write(s)

@@ -162,6 +162,51 @@ class TestDriver(unittest.TestCase):
 
     # -----------------------------------------------------------------------------
 
+    def test_reverse_search_accepts_latest_match(self):
+        self.driver.history = ["ls -la", "git status", "git diff"]
+        self._send_input("\x12git\r")
+        self.assertEqual(self.driver.input_buffer, "git diff")
+        self.assertEqual(self.driver.cursor_position, 0)
+
+    # -----------------------------------------------------------------------------
+
+    def test_reverse_search_repeat_moves_backward(self):
+        self.driver.history = ["ls -la", "git status", "git diff"]
+        self._send_input("\x12git\x12\r")
+        self.assertEqual(self.driver.input_buffer, "git status")
+        self.assertEqual(self.driver.cursor_position, 0)
+
+    # -----------------------------------------------------------------------------
+
+    def test_reverse_search_cancel_restores_original_buffer(self):
+        self.driver.history = ["git status", "git diff"]
+        self.driver.input_buffer = "echo keep"
+        self._send_input("\x12git\x07")
+        self.assertEqual(self.driver.input_buffer, "echo keep")
+        self.assertEqual(self.driver.cursor_position, 0)
+
+    # -----------------------------------------------------------------------------
+
+    def test_focus_tracking_sequences_are_ignored(self):
+        self._send_input("\x1B[I")
+        self._send_input("\x1B[O")
+        self.assertEqual(self.driver.state, self.driver._state_ground)
+        self.assertEqual(self.driver.input_buffer, "")
+        self.assertEqual(self.output.read(10), b"")
+
+    # -----------------------------------------------------------------------------
+
+    def test_unsupported_csi_sequence_recovers_to_ground(self):
+        with self.assertRaises(RuntimeError):
+            self._send_input("\x1B[/")
+
+        self.driver.handle_input("e")
+        self.assertEqual(self.driver.state, self.driver._state_ground)
+        self.assertEqual(self.driver.input_buffer, "e")
+        self.assertEqual(self.output.read(10), b"e")
+
+    # -----------------------------------------------------------------------------
+
     def _send_input(self, s):
         for c in s:
             self.driver.handle_input(c)

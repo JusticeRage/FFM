@@ -50,16 +50,21 @@ def update_window_size(signum=None, frame=None):
     Handler for the WINCH signal. Forwards the new size to all the existing sessions.
     :return:
     """
-    redraw = context.window_size is not None
+    driver = (
+        context.active_session.input_driver
+        if context.active_session is not None
+        else getattr(context, "terminal_driver", None)
+    )
+    redraw = context.window_size is not None and driver is not None
     if redraw:
-        context.terminal_driver.clear_line()
+        driver.clear_line()
     winsz = array.array("h", [0, 0, 0, 0])
     fcntl.ioctl(sys.stdin, termios.TIOCGWINSZ, winsz, True)
     for s in context.sessions:
         fcntl.ioctl(s.master, termios.TIOCSWINSZ, winsz)
     context.window_size = [winsz[0], winsz[1]]
     if redraw:
-        context.terminal_driver.draw_current_line()
+        driver.draw_current_line()
 
 
 # -----------------------------------------------------------------------------
@@ -154,9 +159,9 @@ def main():
                     # Store the last line for future use
                     last = read.split(b"\n")[-1]
                     # Debian terminals update the window title with this escape sequence. Ignore it.
-                    last = re.sub(b"\x1b]0;.*?\x07", b"", last)
+                    last = re.sub(rb"\x1b]0;.*?\x07", b"", last)
                     # Kali terminals add color to the prompt. Strip it.
-                    last = re.sub(b"\x1b\[[0-?]*[ -/]*[@-~]", b"", last)
+                    last = re.sub(rb"\x1b\[[0-?]*[ -/]*[@-~]", b"", last)
                     if re.match(
                         PROMPT_REGEXP, last.decode("UTF-8", errors="ignore"), re.UNICODE
                     ):

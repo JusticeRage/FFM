@@ -142,3 +142,26 @@ class TestSSHCommandLineProcessor(DummyContextTest):
             result[1],
             cmdline + " -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null -T",
         )
+
+    def test_option_config_bypass_from_string_value(self):
+        ssh_command_line.context.config["SSHOptions"][
+            "force_disable_pty_allocation"
+        ] = "no"
+        ssh_command_line.context.config["SSHOptions"]["prevent_ssh_key_leaks"] = "no"
+        ssh_command_line.context.config["SSHOptions"]["disable_known_hosts"] = "no"
+        ssh_command_line.context.config["SSHOptions"]["strict_host_key_checking"] = "no"
+        cmdline = "ssh root@host -p2222 -v"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(result[1], cmdline)
+
+    def test_proxy_command_keeps_quoted_value(self):
+        cmdline = "ssh root@host -o ProxyCommand='nc -x 127.0.0.1:9050 %h %p'"
+        p = SSHOptions()
+        result = p.apply(cmdline)
+        self.assertEqual(result[0], ProcessorAction.FORWARD)
+        self.assertEqual(
+            result[1],
+            cmdline + " -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null -T",
+        )

@@ -16,12 +16,15 @@
 """
 
 import glob
+import importlib
 import os
 import re
+import shlex
 from model.plugin.command import Command
 from model.driver.input_api import write_str, LogLevel
 
 COMMAND_LIST = set()
+_commands_loaded = False
 
 
 def register_plugin(plugin):
@@ -41,10 +44,12 @@ def register_plugin(plugin):
 def parse_commands(command_line):
     for c in COMMAND_LIST:
         if re.match(c.regexp(), command_line):
-            # TODO: parse better?
-            args = command_line.split()
             try:
+                args = shlex.split(command_line)
                 command_instance = c(*args)
+            except ValueError as e:
+                write_str("Could not parse command line: %s\r\n" % str(e), LogLevel.WARNING)
+                return True
             except RuntimeError as e:  # The constructor throws: show the command usage.
                 c.usage()
                 if str(e):
@@ -120,7 +125,7 @@ class ListPlugins(Command):
             for s in sorted(set(strings)):
                 write_str(s)
         else:
-            write_str(self.usage())
+            self.usage()
         #print(strings)
     @staticmethod
     def regexp():
@@ -146,6 +151,21 @@ class ListPlugins(Command):
         )
 
 
+def _load_command_modules():
+    global _commands_loaded
+    if _commands_loaded:
+        return
+
+    folder = os.path.dirname(__file__)
+    package = __name__.rsplit(".", 1)[0]
+    for f in glob.glob(os.path.join(folder, "*.py")):
+        name = os.path.splitext(os.path.basename(f))[0]
+        if name in {"__init__", "command_manager"}:
+            continue
+        importlib.import_module("%s.%s" % (package, name))
+    _commands_loaded = True
+
+
 # -----------------------------------------------------------------------------
 # This section registers all known commands at startup. It starts by adding
 # "builtin" commands, and then scans the current folder for any .py file.
@@ -153,10 +173,4 @@ class ListPlugins(Command):
 
 # Register all "builtin" commands
 register_plugin(ListPlugins)
-# Look for commands in the folder
-folder = os.path.dirname(__file__)
-for f in glob.glob(os.path.join(folder, "*.py")):
-    if f == __file__ or f.endswith("__init__.py"):
-        continue
-    with open(f, "rb") as fd:
-        exec(compile(fd.read(), f, "exec"))
+_load_command_modules()

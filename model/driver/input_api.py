@@ -21,8 +21,10 @@ import os
 import random
 import re
 import select
+import shlex
 import string
 import sys
+import time
 
 MARKER_STR = "".join(random.choice(string.ascii_letters) for _ in range(32))
 MARKER = MARKER_STR.encode("UTF-8")
@@ -89,8 +91,17 @@ def write_str(s, level=LogLevel.INFO):
 # -----------------------------------------------------------------------------
 
 
-def _read_all_output(timeout):
+def shell_quote(value):
     """
+    Quotes a string so it can be safely embedded into a shell command.
+    :param value: The string to quote.
+    :return: A shell-escaped version of the string.
+    """
+    return shlex.quote(str(value))
+
+
+def _read_all_output(timeout):
+    r"""
     Reads all the output of a command from the current terminal.
     This works by reading from the TTY until a command prompt is found.
     /!\ The end marker is expected to be the same as the one before the
@@ -101,6 +112,7 @@ def _read_all_output(timeout):
     :return:
     """
     output = b""
+    deadline = time.monotonic() + timeout
     end_marker = context.active_session.input_driver.last_line.encode("UTF-8")
     if not end_marker:
         # No prompt to detect. Add a marker manually to know when to stop reading the output.
@@ -109,10 +121,19 @@ def _read_all_output(timeout):
             context.active_session.master, ("echo -n %s\r" % MARKER_STR).encode("UTF-8")
         )
     # Strip ascii color codes and such when looking for the end marker.
-    while not re.sub(b"\x1b]0;.*?\x07|\x1b\[[0-?]*[ -/]*[@-~]", b"", output).endswith(
+    while not re.sub(
+        rb"\x1b]0;.*?\x07|\x1b\[[0-?]*[ -/]*[@-~]", b"", output
+    ).endswith(
         end_marker
     ):
-        r, _, _ = select.select([context.active_session.master], [], [], timeout)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            write_str(
+                "Timeout reached; giving up on trying to capture the output.\r\n",
+                LogLevel.ERROR,
+            )
+            return output.decode("UTF-8")
+        r, _, _ = select.select([context.active_session.master], [], [], remaining)
         if context.active_session.master in r:
             output += os.read(context.active_session.master, 4096)
         else:
@@ -148,7 +169,7 @@ def pass_command(command):
 
 
 def shell_exec(command, print_output=False, output_cleaner=None, timeout=300):
-    """
+    r"""
     Executes a command in the shell.
     /!\ Do not run commands that change the prompt (ie. cd, etc.)!
     :param command: The command to run.
@@ -178,7 +199,7 @@ def file_exists(path):
     :param path: The path to test.
     :return: True if the file exists, False otherwise.
     """
-    output = shell_exec("test -f %s ; echo $?" % path, timeout=30)
+    output = shell_exec("test -f %s ; echo $?" % shell_quote(path), timeout=30)
     return int(output) == 0
 
 
@@ -191,7 +212,7 @@ def is_directory(path):
     :param path: The path to test
     :return: True if the file is a directory.
     """
-    output = shell_exec("test -d %s ; echo $?" % path, timeout=30)
+    output = shell_exec("test -d %s ; echo $?" % shell_quote(path), timeout=30)
     return int(output) == 0
 
 
@@ -204,7 +225,9 @@ def check_command_existence(cmd):
     :param cmd: The command whose existence we want to check.
     :return: True if the command is present on the system, False otherwise.
     """
-    output = shell_exec("command -v %s >/dev/null ; echo $?" % cmd, timeout=30)
+    output = shell_exec(
+        "command -v %s >/dev/null ; echo $?" % shell_quote(cmd), timeout=30
+    )
     return int(output) == 0
 
 

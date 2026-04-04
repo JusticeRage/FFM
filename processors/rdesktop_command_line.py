@@ -15,10 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import shlex
+
 from model import context
 from model.plugin.processor import Processor, ProcessorType, ProcessorAction
 from processors.processor_manager import register_processor
 from model.driver.input_api import write_str, LogLevel
+from misc.config_utils import get_config_boolean
 from misc.string_utils import get_commands, get_arguments, CMDLINE_SEPARATORS
 from misc.silent_argparse import SilentArgumentParser
 
@@ -43,13 +46,15 @@ class RdesktopOptions(Processor):
         parser = SilentArgumentParser()
         parser.add_argument("-u")
         try:
-            args, _ = parser.parse_known_args(rdesktop_cmdline.split())
+            args, _ = parser.parse_known_args(shlex.split(rdesktop_cmdline))
         except RuntimeError:
             # The rdesktop command line seems invalid. Let SSH display its error message / usage.
             return ProcessorAction.FORWARD, user_input
 
         # Block the command if the username is leaking
-        if context.config["RdesktopOptions"]["require_explicit_username"]:
+        if get_config_boolean(
+            context.config, "RdesktopOptions", "require_explicit_username"
+        ):
             if not args.u:
                 write_str(
                     "FFM blocked a command that may leak your local username. "

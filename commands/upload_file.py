@@ -69,6 +69,7 @@ class Upload(Command):
         return "Transfer"
 
     def execute(self):
+        quoted_destination = shell_quote(self.destination)
         with open(self.target_file, "rb") as f:
             md5 = hashlib.md5()
             with tqdm.tqdm(
@@ -80,13 +81,13 @@ class Upload(Command):
                     b64 = base64.b64encode(data)
                     shell_exec(
                         'echo "%s" |base64 -d |gunzip >> %s'
-                        % (b64.decode("ascii"), self.destination)
+                        % (b64.decode("ascii"), quoted_destination)
                     )
                     md5.update(contents)
                     progress_bar.update(len(contents))
                     contents = f.read(2048)
         md5sum = md5.hexdigest()
-        remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % self.destination)
+        remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % quoted_destination)
         write_str(
             "\rLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum),
             LogLevel.WARNING,

@@ -16,12 +16,14 @@
 """
 
 import glob
+import importlib
 import os
 from model.plugin.processor import Processor, ProcessorType, ProcessorAction
 from model.driver.input_api import write_str, LogLevel
 
 INPUT_PROCESSOR_LIST = set()
 OUTPUT_PROCESSOR_LIST = set()
+_processors_loaded = False
 
 
 def register_processor(plugin):
@@ -78,14 +80,23 @@ def apply_processors(user_input, processors):
     return True, command_line
 
 
+def _load_processor_modules():
+    global _processors_loaded
+    if _processors_loaded:
+        return
+
+    folder = os.path.dirname(__file__)
+    package = __name__.rsplit(".", 1)[0]
+    for f in glob.glob(os.path.join(folder, "*.py")):
+        name = os.path.splitext(os.path.basename(f))[0]
+        if name in {"__init__", "processor_manager"}:
+            continue
+        importlib.import_module("%s.%s" % (package, name))
+    _processors_loaded = True
+
+
 # -----------------------------------------------------------------------------
 # This section registers all processors at startup.
 # -----------------------------------------------------------------------------
 
-# Look for processors in this folder
-folder = os.path.dirname(__file__)
-for f in glob.glob(os.path.join(folder, "*.py")):
-    if f == __file__ or f.endswith("__init__.py"):
-        continue
-    with open(f, "rb") as fd:
-        exec(compile(fd.read(), f, "exec"))
+_load_processor_modules()

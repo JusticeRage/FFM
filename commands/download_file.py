@@ -68,7 +68,8 @@ class Download(Command):
         return "Transfer"
 
     def execute(self):
-        file_size = int(shell_exec('stat -c "%%s" %s' % self.target_file, False))
+        quoted_target = shell_quote(self.target_file)
+        file_size = int(shell_exec('stat -c "%%s" %s' % quoted_target, False))
         bytes_read = 0
         md5 = hashlib.md5()
         with open(self.destination, "wb") as f:
@@ -78,13 +79,13 @@ class Download(Command):
                     if check_command_existence("xxd"):
                         data = shell_exec(
                             "xxd -p -l%d -s%d %s"
-                            % (chunk_size, bytes_read, self.target_file),
+                            % (chunk_size, bytes_read, quoted_target),
                             False,
                         )
                     else:
                         data = shell_exec(
                             "od -vt x1 -N%d -j%d %s | awk '{$1=\"\"; print $0}'"
-                            % (chunk_size, bytes_read, self.target_file),
+                            % (chunk_size, bytes_read, quoted_target),
                             False,
                         )
                     data = re.sub(
@@ -96,7 +97,7 @@ class Download(Command):
                     md5.update(data)
                     f.write(data)
         md5sum = md5.hexdigest()
-        remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % self.target_file)
+        remote_md5sum = shell_exec("md5sum %s |cut -d' ' -f1" % quoted_target)
         write_str(
             "\rLocal MD5:  %s\r\nRemote MD5: %s\r\n" % (md5sum, remote_md5sum),
             LogLevel.WARNING,

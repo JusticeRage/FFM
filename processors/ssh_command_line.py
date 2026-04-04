@@ -15,10 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import shlex
+
 from model import context
 from model.plugin.processor import Processor, ProcessorType, ProcessorAction
 from processors.processor_manager import register_processor
 from model.driver.input_api import write_str, LogLevel
+from misc.config_utils import get_config_boolean
 from misc.string_utils import get_commands, get_arguments, CMDLINE_SEPARATORS
 from misc.silent_argparse import SilentArgumentParser
 
@@ -54,13 +57,13 @@ class SSHOptions(Processor):
         parser.add_argument("-R")
         parser.add_argument("positional", nargs="+")
         try:
-            args, _ = parser.parse_known_args(ssh_cmdline.split())
+            args, _ = parser.parse_known_args(shlex.split(ssh_cmdline))
         except RuntimeError:
             # The SSH command line seems invalid. Let SSH display its error message / usage.
             return ProcessorAction.FORWARD, user_input
 
         # Block the command if the username is leaking
-        if context.config["SSHOptions"]["require_explicit_username"]:
+        if get_config_boolean(context.config, "SSHOptions", "require_explicit_username"):
             if not any("@" in arg for arg in args.positional) and not args.l:
                 write_str(
                     "FFM blocked a command that may leak your local username. "
@@ -70,7 +73,7 @@ class SSHOptions(Processor):
                 return ProcessorAction.CANCEL, None
 
         # Add -oPubkeyAuthentication=no to prevent SSH keys from leaking.
-        if context.config["SSHOptions"]["prevent_ssh_key_leaks"]:
+        if get_config_boolean(context.config, "SSHOptions", "prevent_ssh_key_leaks"):
             if not args.i and (
                 not args.o
                 or not any("PubkeyAuthentication" in option for option in args.o)
@@ -78,18 +81,20 @@ class SSHOptions(Processor):
                 options_added.append("-oPubkeyAuthentication=no")
 
         # Add -oUserKnownHostsFile=/dev/null to prevent the connexion from being logged there.
-        if context.config["SSHOptions"]["disable_known_hosts"]:
+        if get_config_boolean(context.config, "SSHOptions", "disable_known_hosts"):
             if not args.o or not any(
                 "UserKnownHostsFile" in option for option in args.o
             ):
                 options_added.append("-oUserKnownHostsFile=/dev/null")
 
         # Add the -T option if it is missing
-        if context.config["SSHOptions"]["force_disable_pty_allocation"]:
+        if get_config_boolean(
+            context.config, "SSHOptions", "force_disable_pty_allocation"
+        ):
             if not args.T:
                 options_added.append("-T")
 
-        if context.config["SSHOptions"]["strict_host_key_checking"]:
+        if get_config_boolean(context.config, "SSHOptions", "strict_host_key_checking"):
             if not args.o or not any(
                 "StrictHostKeyChecking" in option for option in args.o
             ):
