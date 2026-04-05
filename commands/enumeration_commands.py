@@ -1,5 +1,5 @@
 """
-    ffm.py by @JusticeRage and @ice-wzl
+    ffm.py by @JusticeRage
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ class Suid(Command):
     def execute(self):
         write_str("[+] SUID + SGID Binaries: \r\n", LogLevel.WARNING)
         shell_exec(
-            r"find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null; find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null",
+            r"find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null",
             print_output=True,
         )
 
@@ -228,7 +228,9 @@ class Mtime(Command):
     def __init__(self, *args, **kwargs):
         self.time = None
         if len(args) == 2:
-            self.time = args[1]
+            if not args[1].isdigit() or int(args[1]) <= 0:
+                raise RuntimeError("Expected a positive integer number of minutes.")
+            self.time = int(args[1])
         else:
             raise RuntimeError("Received %d argument(s), expected 2." % len(args))
 
@@ -257,9 +259,7 @@ class Mtime(Command):
             "[+] Files Modified in the last {}m:\r\n".format(self.time), LogLevel.WARNING
         )
         shell_exec(
-            'find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(
-                self.time
-            ),
+            'find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(self.time),
             print_output=True,
         )
 
@@ -429,13 +429,20 @@ else:
         return "Usage: !strange-dirs [path]"
 
     def execute(self):
-        # echo python stager_script into a work_file in a tmpfs
-        shell_exec('echo "%s" > %s\n' % (self.stager_script, self.work_file))
-        shell_exec("chmod +x %s" % self.work_file)
+        quoted_work_file = shell_quote(self.work_file)
+        shell_exec(
+            "cat <<'__FFM_STRANGE_DIRS__' > {work_file}\n{script}\n__FFM_STRANGE_DIRS__".format(
+                work_file=quoted_work_file, script=self.stager_script.rstrip("\n")
+            )
+        )
+        shell_exec("chmod +x %s" % quoted_work_file)
         # execute the script printing the output back to the user
-        shell_exec("python3 %s %s" % (self.work_file, self.path), print_output=True)
+        shell_exec(
+            "python3 %s %s" % (quoted_work_file, shell_quote(self.path)),
+            print_output=True,
+        )
         # get rid of our artifact
-        shell_exec("rm %s" % (self.work_file))
+        shell_exec("rm %s" % quoted_work_file)
 
 
 class DirWalk(Command):
@@ -471,15 +478,15 @@ class DirWalk(Command):
     def execute(self):
         command_output = shell_exec(
             r"ls -R {} 2>/dev/null | grep \":$\" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/    /' -e 's/-/|/'".format(
-                self.path
+                shell_quote(self.path)
             ),
             print_output=True,
         )
-        res = ''.join(random.choices(string.ascii_uppercase +
-                             string.digits, k=5))	
+        res = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
         if not os.path.isdir("dirwalk"):
             os.mkdir("dirwalk")
-        with open("dirwalk/" + res + ".txt", 'w') as fp:
+        output_file = "dirwalk/" + res + ".txt"
+        with open(output_file, 'w') as fp:
             fp.write(command_output)
         write_str("[+] Wrote dirwalk output to dirwalk/{}\r\n".format(res), LogLevel.WARNING)
 

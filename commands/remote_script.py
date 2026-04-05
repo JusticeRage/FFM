@@ -28,7 +28,7 @@ class RemoteScript(Command):
         self.script = os.path.expanduser(args[1])
         if not os.path.exists(self.script):
             raise RuntimeError("%s not found!" % self.script)
-        self.script_args = " ".join(args[2:]) if len(args) > 2 else ""
+        self.script_args = list(args[2:])
         self.output_cleaner = None
 
         if not check_command_existence(self._get_interpreter()):
@@ -60,14 +60,23 @@ class RemoteScript(Command):
         """
         return None
 
+    @staticmethod
+    def _get_heredoc_delimiter(script_contents):
+        delimiter = "__FFM_EOF__"
+        while delimiter in script_contents:
+            delimiter += "_X"
+        return delimiter
+
     def execute(self):
         with open(self.script, "r") as f:
             contents = f.read()
+            delimiter = self._get_heredoc_delimiter(contents)
             shell_exec(
                 self._get_command_line().format(
                     interpreter=self._get_interpreter(),
-                    args=self.script_args,
+                    args=shell_join(self.script_args),
                     script=contents,
+                    delimiter=delimiter,
                 ),
                 print_output=True,
                 output_cleaner=self._get_output_cleaner(),
@@ -105,7 +114,7 @@ class RunPyScript(RemoteScript):
         return "python"
 
     def _get_command_line(self):
-        return "{interpreter} - {args} <<'__EOF__'\r\n{script}\r\n__EOF__"
+        return "{interpreter} - {args} <<'{delimiter}'\r\n{script}\r\n{delimiter}"
 
     def _get_output_cleaner(self):
         # The Python interpreter displays a prompt while reading scripts from stdin. Strip it.
@@ -143,7 +152,7 @@ class RunPy3Script(RemoteScript):
         return "python3"
 
     def _get_command_line(self):
-        return "{interpreter} - {args} <<'__EOF__'\r\n{script}\r\n__EOF__"
+        return "{interpreter} - {args} <<'{delimiter}'\r\n{script}\r\n{delimiter}"
 
     def _get_output_cleaner(self):
         # The Python interpreter displays a prompt while reading scripts from stdin. Strip it.
@@ -179,7 +188,7 @@ class RunShScript(RemoteScript):
         return "sh"
 
     def _get_command_line(self):
-        return "{interpreter} -s {args} <<'__EOF__'\r\n{script}\r\n__EOF__"
+        return "{interpreter} -s {args} <<'{delimiter}'\r\n{script}\r\n{delimiter}"
 
     def _get_output_cleaner(self):
         pass

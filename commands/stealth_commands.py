@@ -1,5 +1,5 @@
 """
-    ffm.py by @JusticeRage and @ice-wzl
+    ffm.py by @JusticeRage
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -94,13 +94,17 @@ class Shred(Command):
         return "Usage: !shred [file]"
 
     def execute(self):
+        quoted_file = shell_quote(self.file)
         if not check_command_existence("shred"):
-            shell_exec(f"FN={self.file}")
             shell_exec(
-                'dd bs=1k count="`du -sk "${FN}" | cut -f1`" if=/dev/urandom > "${FN}"; rm -f "${FN}"',print_output=True,)
+                'dd if=/dev/urandom of={file} bs=1k count="$(du -sk {file} | cut -f1)" conv=notrunc 2>/dev/null; rm -f {file}'.format(
+                    file=quoted_file
+                ),
+                print_output=True,
+            )
             write_str("{} deleted with dd/rm\r\n".format(self.file), LogLevel.ERROR)
         else:
-            shell_exec("shred -uz {}".format(self.file))
+            shell_exec("shred -uz {}".format(quoted_file))
             write_str("{} deleted with shred\r\n".format(self.file), LogLevel.ERROR)
 
 

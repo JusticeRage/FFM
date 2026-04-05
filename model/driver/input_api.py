@@ -100,6 +100,15 @@ def shell_quote(value):
     return shlex.quote(str(value))
 
 
+def shell_join(values):
+    """
+    Quotes and joins a sequence of shell arguments.
+    :param values: Iterable of argument values.
+    :return: A shell-safe command-line fragment.
+    """
+    return " ".join(shell_quote(value) for value in values)
+
+
 def _read_all_output(timeout):
     r"""
     Reads all the output of a command from the current terminal.

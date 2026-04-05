@@ -48,12 +48,15 @@ class Sudo(Command):
         self.command = args[2:]
 
     def execute(self):
+        quoted_work_file = shell_quote(self.work_file)
+        quoted_command = shell_join(self.command)
         # Create an askpass script
         shell_exec(
-            "cat <<'__EOF__' > %s\n#!/bin/bash\necho '%s'\n__EOF__\n"
-            % (self.work_file, self.password)
+            "cat <<'__EOF__' > {work_file}\n#!/bin/bash\nprintf '%s\\n' {password}\n__EOF__\n".format(
+                work_file=quoted_work_file, password=shell_quote(self.password)
+            )
         )
-        shell_exec("chmod +x %s" % self.work_file)
+        shell_exec("chmod +x %s" % quoted_work_file)
         # Call sudo with the askpass script.
         # pass_command is used because sudo has a very weird behavior:
         # > SUDO_ASKPASS=/tmp/test.sh sudo -A id ; echo -n "AAAAAA"
@@ -61,8 +64,9 @@ class Sudo(Command):
         # sudoAAAAAA: 3 incorrect password attempts
         # The echo data is mangled with sudo's output which screws with FFM's internals.
         pass_command(
-            "SUDO_ASKPASS=%s sudo -A %s ; rm %s"
-            % (self.work_file, " ".join(self.command), self.work_file)
+            "SUDO_ASKPASS={work_file} sudo -A {command} ; rm {work_file}".format(
+                work_file=quoted_work_file, command=quoted_command
+            )
         )
 
     @staticmethod
