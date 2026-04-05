@@ -61,10 +61,10 @@ class TestEnumerationCommandHardening(DummyContextTest):
 
     def _assert_dirwalk_quotes_path(self, module):
         path = "/tmp/path with spaces;echo nope"
-        with mock.patch.object(
-            module.random, "choices", return_value=list("ABCDE")
-        ):
-            with mock.patch.object(module, "shell_exec", return_value="tree") as shell_exec:
+        with mock.patch.object(module.random, "choices", return_value=list("ABCDE")):
+            with mock.patch.object(
+                module, "shell_exec", return_value="tree"
+            ) as shell_exec:
                 with mock.patch.object(module.os.path, "isdir", return_value=False):
                     with mock.patch.object(module.os, "mkdir") as mkdir:
                         with mock.patch("builtins.open", mock.mock_open()) as file_open:

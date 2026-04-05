@@ -1,18 +1,18 @@
 """
-    FFM by @JusticeRage
+FFM by @JusticeRage
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os
@@ -72,11 +72,11 @@ class TestDriver(unittest.TestCase):
 
     def test_handle_input_keys(self):
         # Left arrow with an empty buffer.
-        self._send_input("\x1B[D")
+        self._send_input("\x1b[D")
         self.assertEqual(self.output.read(10), b"")
         # Left arrow with some bytes in the buffer.
-        self._send_input("AAA\x1B[D")
-        self.assertEqual(self.output.read(10), b"AAA\x1B[D")
+        self._send_input("AAA\x1b[D")
+        self.assertEqual(self.output.read(10), b"AAA\x1b[D")
         self.assertEqual(self.driver.cursor_position, 1)
 
     # -----------------------------------------------------------------------------
@@ -188,8 +188,8 @@ class TestDriver(unittest.TestCase):
     # -----------------------------------------------------------------------------
 
     def test_focus_tracking_sequences_are_ignored(self):
-        self._send_input("\x1B[I")
-        self._send_input("\x1B[O")
+        self._send_input("\x1b[I")
+        self._send_input("\x1b[O")
         self.assertEqual(self.driver.state, self.driver._state_ground)
         self.assertEqual(self.driver.input_buffer, "")
         self.assertEqual(self.output.read(10), b"")
@@ -198,7 +198,7 @@ class TestDriver(unittest.TestCase):
 
     def test_unsupported_csi_sequence_recovers_to_ground(self):
         with self.assertRaises(RuntimeError):
-            self._send_input("\x1B[/")
+            self._send_input("\x1b[/")
 
         self.driver.handle_input("e")
         self.assertEqual(self.driver.state, self.driver._state_ground)

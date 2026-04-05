@@ -1,18 +1,18 @@
 """
-    FFM by @JusticeRage
+FFM by @JusticeRage
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from commands.command_manager import parse_commands
@@ -607,14 +607,16 @@ class DefaultInputDriver(BaseDriver):
         if move_length > start_offset:
             move_length = start_offset
 
-        if start_offset // context.window_size[1] == (
-            start_offset - move_length
-        ) // context.window_size[1]:
+        if (
+            start_offset // context.window_size[1]
+            == (start_offset - move_length) // context.window_size[1]
+        ):
             return 0, -move_length
 
-        delta_lines = start_offset // context.window_size[1] - (
-            start_offset - move_length
-        ) // context.window_size[1]
+        delta_lines = (
+            start_offset // context.window_size[1]
+            - (start_offset - move_length) // context.window_size[1]
+        )
         delta_columns = (start_offset - move_length) % context.window_size[1] - (
             start_offset
         ) % context.window_size[1]
@@ -797,7 +799,7 @@ class DefaultInputDriver(BaseDriver):
                 )  # Manually write the prompt to the log too.
             else:
                 # No command detected: forward the input to the TTY.
-                (proceed, command_line) = apply_processors(
+                proceed, command_line = apply_processors(
                     self.input_buffer, INPUT_PROCESSOR_LIST
                 )
                 if (
