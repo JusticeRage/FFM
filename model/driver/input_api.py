@@ -1,19 +1,20 @@
 """
-    FFM by @JusticeRage
+FFM by @JusticeRage
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from enum import Enum
 import misc.logging
 from model import context
@@ -109,19 +110,92 @@ def shell_join(values):
     return " ".join(shell_quote(value) for value in values)
 
 
-def _read_all_output(timeout):
+def _new_marker():
+    """
+    Generates a marker that is unlikely to appear in command output.
+    :return: A random ascii marker as bytes.
+    """
+    return "".join(random.choice(string.ascii_letters) for _ in range(32)).encode(
+        "UTF-8"
+    )
+
+
+def _build_exec_command(command, start_marker, end_marker):
+    """
+    Wraps a command with explicit begin/end markers so the harness can detect
+    completion without relying on the prompt.
+    :param command: The command to run.
+    :param start_marker: Marker emitted immediately before the command.
+    :param end_marker: Marker emitted with the command's exit status.
+    :return: A shell command string.
+    """
+    return (
+        "printf '%s\\n' {start}\n"
+        "{command}\n"
+        "__ffm_status=$?\n"
+        "printf '%s:%s\\n' {end} \"$__ffm_status\""
+    ).format(
+        start=shell_quote(start_marker.decode("UTF-8")),
+        command=command,
+        end=shell_quote(end_marker.decode("UTF-8")),
+    )
+
+
+def _read_all_output(timeout, start_marker=None, end_marker=None):
     r"""
     Reads all the output of a command from the current terminal.
-    This works by reading from the TTY until a command prompt is found.
-    /!\ The end marker is expected to be the same as the one before the
-    command was executed! This means that if the command changes the prompt,
-    (ie. cd, etc.) this function will never return!
+    When explicit markers are provided, output is collected until the end
+    marker is seen and the data between both markers is returned.
+    Otherwise, this falls back to reading until the command prompt is found.
+    /!\ In prompt-detection mode, the end marker is expected to be the same as
+    the one before the command was executed! This means that if the command
+    changes the prompt, (ie. cd, etc.) this function will never return!
     :param timeout The maximum amount of time to wait for the end of the
     output.
     :return:
     """
     output = b""
     deadline = time.monotonic() + timeout
+    if end_marker is not None:
+        start_pattern = (
+            re.compile(rb"(?:^|\r?\n)" + re.escape(start_marker) + rb"\r?\n")
+            if start_marker
+            else None
+        )
+        end_pattern = re.compile(
+            rb"(?:^|\r?\n)" + re.escape(end_marker) + rb":\d+(?:\r?\n|$)"
+        )
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                write_str(
+                    "Timeout reached; giving up on trying to capture the output.\r\n",
+                    LogLevel.ERROR,
+                )
+                return output.decode("UTF-8")
+            r, _, _ = select.select([context.active_session.master], [], [], remaining)
+            if context.active_session.master in r:
+                output += os.read(context.active_session.master, 4096)
+                end_match = end_pattern.search(output)
+                if end_match:
+                    start_index = 0
+                    if start_pattern:
+                        start_match = start_pattern.search(output)
+                        if not start_match:
+                            continue
+                        start_index = start_match.end()
+                    return (
+                        output[start_index : end_match.start()]
+                        .rstrip(b"\r\n")
+                        .decode("UTF-8")
+                    )
+            else:
+                write_str(
+                    "Timeout reached; giving up on trying to capture the output.\r\n",
+                    LogLevel.ERROR,
+                )
+                return output.decode("UTF-8")
+
     end_marker = context.active_session.input_driver.last_line.encode("UTF-8")
     if not end_marker:
         # No prompt to detect. Add a marker manually to know when to stop reading the output.
@@ -130,9 +204,7 @@ def _read_all_output(timeout):
             context.active_session.master, ("echo -n %s\r" % MARKER_STR).encode("UTF-8")
         )
     # Strip ascii color codes and such when looking for the end marker.
-    while not re.sub(
-        rb"\x1b]0;.*?\x07|\x1b\[[0-?]*[ -/]*[@-~]", b"", output
-    ).endswith(
+    while not re.sub(rb"\x1b]0;.*?\x07|\x1b\[[0-?]*[ -/]*[@-~]", b"", output).endswith(
         end_marker
     ):
         remaining = deadline - time.monotonic()
@@ -180,7 +252,8 @@ def pass_command(command):
 def shell_exec(command, print_output=False, output_cleaner=None, timeout=300):
     r"""
     Executes a command in the shell.
-    /!\ Do not run commands that change the prompt (ie. cd, etc.)!
+    The command is wrapped with explicit begin/end markers so completion does
+    not depend on prompt detection.
     :param command: The command to run.
     :param print_output: Whether the output of the command should be printed
     to stdout.
@@ -190,8 +263,10 @@ def shell_exec(command, print_output=False, output_cleaner=None, timeout=300):
     read the output of the command.
     :return: The output of the command.
     """
-    pass_command(command)
-    output = _read_all_output(timeout)
+    start_marker = _new_marker()
+    end_marker = _new_marker()
+    pass_command(_build_exec_command(command, start_marker, end_marker))
+    output = _read_all_output(timeout, start_marker=start_marker, end_marker=end_marker)
     if output_cleaner and callable(output_cleaner):
         output = output_cleaner(output)
     if print_output and output:
