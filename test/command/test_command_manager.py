@@ -61,6 +61,30 @@ class DuplicateCommand(Command):
         return "Usage: !dupe"
 
 
+class UsageStringCommand(Command):
+    def __init__(self, *args, **kwargs):
+        raise RuntimeError("bad args")
+
+    def execute(self):
+        return None
+
+    @staticmethod
+    def regexp():
+        return r"^\s*\!usage-string($| )"
+
+    @staticmethod
+    def name():
+        return "!usage-string"
+
+    @staticmethod
+    def description():
+        return "Used to verify usage output handling."
+
+    @staticmethod
+    def usage():
+        return "Usage: !usage-string"
+
+
 class TestCommandManager(unittest.TestCase):
     def test_duplicate_registration_remains_stable(self):
         command_manager = _import_command_manager()
@@ -82,7 +106,10 @@ class TestCommandManager(unittest.TestCase):
 
         messages = [call.args[0] for call in write_str.call_args_list]
         self.assertTrue(
-            any("Command !boom (ExplodingCommand) failed with error: kaboom" in msg for msg in messages)
+            any(
+                "Command !boom (ExplodingCommand) failed with error: kaboom" in msg
+                for msg in messages
+            )
         )
 
     def test_invalid_list_tag_uses_usage_without_crashing(self):
@@ -95,3 +122,13 @@ class TestCommandManager(unittest.TestCase):
 
         usage.assert_called_once()
 
+    def test_runtime_error_prints_usage_string_when_usage_returns_text(self):
+        command_manager = _import_command_manager()
+        with mock.patch.object(
+            command_manager, "COMMAND_LIST", {UsageStringCommand}
+        ), mock.patch.object(command_manager, "write_str") as write_str:
+            self.assertTrue(command_manager.parse_commands("!usage-string"))
+
+        messages = [call.args[0] for call in write_str.call_args_list]
+        self.assertTrue(any("Usage: !usage-string" in msg for msg in messages))
+        self.assertTrue(any("bad args" in msg for msg in messages))

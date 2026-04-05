@@ -1,20 +1,21 @@
 """
-    ffm.py by @JusticeRage
+ffm.py by @JusticeRage
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import random 
+
+import random
 import string
 import time
 from commands.command_manager import register_plugin
@@ -147,7 +148,7 @@ class SshKeys(Command):
     def execute(self):
         write_str("[+] Potential SSH Keys: \r\n", LogLevel.WARNING)
         shell_exec(
-            'find / -type f -name "*.pub" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "authorized_keys" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_rsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ecsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ed25519" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_dsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null',
+            'find / -type f -name "*.pub" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "authorized_keys" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_rsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ecdsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_ed25519" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null; find / -type f -name "*_dsa" ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null',
             print_output=True,
         )
 
@@ -256,10 +257,13 @@ class Mtime(Command):
 
     def execute(self):
         write_str(
-            "[+] Files Modified in the last {}m:\r\n".format(self.time), LogLevel.WARNING
+            "[+] Files Modified in the last {}m:\r\n".format(self.time),
+            LogLevel.WARNING,
         )
         shell_exec(
-            'find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(self.time),
+            'find / -type f -mmin -{} ! -path "/proc/*" ! -path "/sys/*" ! -path "/run/*" ! -path "/dev/*" ! -path "/var/lib/*" 2>/dev/null'.format(
+                self.time
+            ),
             print_output=True,
         )
 
@@ -296,10 +300,13 @@ class SudoV(Command):
         if len(test_sudo) == 0:
             write_str("[+] Sudo Version is likely NOT Vulnerable\r\n", LogLevel.WARNING)
         elif "not found" in test_sudo:
-            write_str("[!] Sudo not found, are you in a container?\r\n", LogLevel.WARNING)
+            write_str(
+                "[!] Sudo not found, are you in a container?\r\n", LogLevel.WARNING
+            )
         else:
             write_str(
-                "[!] Sudo Version might be Vulnerable, examine further\r\n", LogLevel.ERROR
+                "[!] Sudo Version might be Vulnerable, examine further\r\n",
+                LogLevel.ERROR,
             )
 
 
@@ -482,13 +489,15 @@ class DirWalk(Command):
             ),
             print_output=True,
         )
-        res = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        res = "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
         if not os.path.isdir("dirwalk"):
             os.mkdir("dirwalk")
         output_file = "dirwalk/" + res + ".txt"
-        with open(output_file, 'w') as fp:
+        with open(output_file, "w") as fp:
             fp.write(command_output)
-        write_str("[+] Wrote dirwalk output to dirwalk/{}\r\n".format(res), LogLevel.WARNING)
+        write_str(
+            "[+] Wrote dirwalk output to dirwalk/{}\r\n".format(res), LogLevel.WARNING
+        )
 
 
 register_plugin(GetOS)

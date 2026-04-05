@@ -1,20 +1,21 @@
 # coding=utf-8
 """
-    FFM by @JusticeRage
+FFM by @JusticeRage
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import re
 
 # Not alphanum in the strictest sense. This list is used to figure out where the cursor
@@ -157,10 +158,14 @@ def get_commands(command_line, separators=CMDLINE_SEPARATORS):
         command_line = re.sub(r"%s" % re.escape(s), " %s " % s, command_line)
 
     tokens = command_line.split()
+    if not tokens:
+        return []
 
     # Skip any separator which may be prepended to the command
-    while tokens[0] in separators:
+    while tokens and tokens[0] in separators:
         tokens.pop(0)
+    if not tokens:
+        return []
 
     # Figure out which tokens are commands and which ones are arguments. We assume that the
     # commands are the first token and all the ones located after a separator.

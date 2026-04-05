@@ -1,18 +1,18 @@
 """
-    FFM by @JusticeRage
+FFM by @JusticeRage
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import glob
@@ -50,10 +50,14 @@ def parse_commands(command_line):
                 args = shlex.split(command_line)
                 command_instance = c(*args)
             except ValueError as e:
-                write_str("Could not parse command line: %s\r\n" % str(e), LogLevel.WARNING)
+                write_str(
+                    "Could not parse command line: %s\r\n" % str(e), LogLevel.WARNING
+                )
                 return True
             except RuntimeError as e:  # The constructor throws: show the command usage.
-                c.usage()
+                usage_output = c.usage()
+                if usage_output:
+                    write_str("%s\r\n" % usage_output, LogLevel.WARNING)
                 if str(e):
                     write_str("%s\r\n" % str(e), LogLevel.WARNING)
             else:
@@ -89,7 +93,7 @@ class ListPlugins(Command):
         # if !list all is provided then do that as well
         write_str("List of commands available:\r\n", LogLevel.WARNING)
         strings = []
-        if self.tag == None or self.tag == "all" or self.tag == '':
+        if self.tag == None or self.tag == "all" or self.tag == "":
             for c in COMMAND_LIST:
                 strings.append("\t%s --> %s\r\n" % (c.name(), c.description()))
             # Sort the plugins by alphabetical order.
@@ -132,7 +136,8 @@ class ListPlugins(Command):
                 write_str(s)
         else:
             self.usage()
-        #print(strings)
+        # print(strings)
+
     @staticmethod
     def regexp():
         return r"^\s*\!list($| )"

@@ -8,9 +8,7 @@ from test.fixture.dummy_context import DummyContextTest
 
 class TestEnumerationCommands(DummyContextTest):
     def test_suid_uses_a_single_find_invocation(self):
-        expected_command = (
-            r"find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null"
-        )
+        expected_command = r"find / -perm -4000 -type f ! -path '/dev/*' -exec ls -la {} \; 2>/dev/null"
 
         with mock.patch.object(
             enumeration_commands, "shell_exec"
@@ -26,7 +24,9 @@ class TestEnumerationCommands(DummyContextTest):
             with mock.patch.object(
                 enumeration_commands, "shell_exec", return_value="tree output"
             ):
-                with mock.patch.object(enumeration_commands.os.path, "isdir", return_value=False):
+                with mock.patch.object(
+                    enumeration_commands.os.path, "isdir", return_value=False
+                ):
                     with mock.patch.object(enumeration_commands.os, "mkdir") as mkdir:
                         with mock.patch("builtins.open", mock.mock_open()) as file_open:
                             cmd = enumeration_commands.DirWalk("!dirwalk", "/tmp/input")
@@ -49,6 +49,16 @@ class TestEnumerationCommands(DummyContextTest):
     def test_mtime_rejects_non_positive_input(self):
         with self.assertRaises(RuntimeError):
             enumeration_commands.Mtime("!mtime", "0")
+
+    def test_sshkeys_searches_for_ecdsa_private_keys(self):
+        with mock.patch.object(
+            enumeration_commands, "shell_exec"
+        ) as shell_exec, mock.patch.object(enumeration_commands, "write_str"):
+            enumeration_commands.SshKeys("!sshkeys").execute()
+
+        command = shell_exec.call_args.args[0]
+        self.assertIn("*_ecdsa", command)
+        self.assertNotIn("*_ecsa", command)
 
 
 if __name__ == "__main__":

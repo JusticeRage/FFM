@@ -144,8 +144,7 @@ except that a local file is put on the remote machine. It lives in `commands/upl
 want to use. This commands uses a multiline syntax with `<<`, which means that pseudo-shells
 that don't support it (Weevely is a good example of that) will break this command quite badly.
 * `!py3 [local script]` does the exact same thing except for systems with python3. It uses the same module, `commands/remote_script.py`.
-* `!elf3 [local script]` Runs an executable from the local machine in memory, requires python3 on the remote machine. It lives in `commands/remote_elf3.py`.
-* `!elf [local script]` Runs an executable from the local machine in memory, requires python2.7 on remote machine. It lives in `commands/remote_elf.py`.
+* `!elf [local script]` Runs an executable from the local machine in memory using whatever compatible Python interpreter is available on the remote machine. It lives in `commands/remote_elf.py`.
 
 ### Stealth Commands 
 - I am fully aware these two modules are the opposite of "stealthy" but it is where they are currently placed until an alternative location can be worked out.  This stealth category will more than likely contain commands that help you blend in better in addition to those commands that might make you stick out.
