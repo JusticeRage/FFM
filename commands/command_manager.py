@@ -20,7 +20,9 @@ import importlib
 import os
 import re
 import shlex
+import traceback
 from model.plugin.command import Command
+import model.context as context
 from model.driver.input_api import write_str, LogLevel
 
 COMMAND_LIST = set()
@@ -59,8 +61,12 @@ def parse_commands(command_line):
                     command_instance.execute()
                 except Exception as e:
                     write_str(
-                        "Command failed with error: %s\r\n" % str(e), LogLevel.WARNING
+                        "Command %s (%s) failed with error: %s\r\n"
+                        % (c.name(), c.__name__, str(e)),
+                        LogLevel.WARNING,
                     )
+                    if getattr(context, "debug_output", False):
+                        write_str(traceback.format_exc(), LogLevel.WARNING)
             return True
     # No commands match, don't do anything.
     return False
@@ -160,7 +166,7 @@ def _load_command_modules():
     package = __name__.rsplit(".", 1)[0]
     for f in glob.glob(os.path.join(folder, "*.py")):
         name = os.path.splitext(os.path.basename(f))[0]
-        if name in {"__init__", "command_manager"}:
+        if name in {"__init__", "command_manager", "replacement_commands"}:
             continue
         importlib.import_module("%s.%s" % (package, name))
     _commands_loaded = True
