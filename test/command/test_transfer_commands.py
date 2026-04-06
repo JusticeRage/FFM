@@ -16,11 +16,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os
+import io
+import tarfile
 import tempfile
 import unittest
 from unittest import mock
 
 import commands.download_file as download_file
+import commands.download_directory as download_directory
 import commands.upload_file as upload_file
 from model.driver.input_api import shell_quote
 from test.fixture.dummy_context import DummyContextTest
@@ -154,3 +157,148 @@ class TestUploadCommandQuoting(DummyContextTest):
                 "md5sum %s |cut -d' ' -f1" % quoted_destination,
             ],
         )
+
+
+class TestDirectoryDownloadCommand(DummyContextTest):
+    def _build_archive(self, members, mode="w:gz"):
+        archive = io.BytesIO()
+        with tarfile.open(fileobj=archive, mode=mode) as tar:
+            for name, data in members.items():
+                info = tarfile.TarInfo(name=name)
+                payload = data.encode("utf-8")
+                info.size = len(payload)
+                tar.addfile(info, io.BytesIO(payload))
+        return archive.getvalue()
+
+    def test_streams_remote_tar_and_extracts_locally(self):
+        remote_path = "/tmp/remote dir's"
+        archive_bytes = self._build_archive(
+            {
+                "remote dir's/file.txt": "hello",
+                "remote dir's/subdir/nested.txt": "world",
+            }
+        )
+
+        commands = []
+
+        def fake_shell_exec_stream(command, handler, timeout=300):
+            commands.append(command)
+            encoded = download_directory.base64.b64encode(archive_bytes)
+            midpoint = len(encoded) // 2
+            handler(encoded[:midpoint] + b"\n")
+            handler(encoded[midpoint:] + b"\n")
+            return 0
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            destination = os.path.join(tmpdir, "extract-here")
+
+            with mock.patch.object(
+                download_directory, "is_directory", return_value=True
+            ), mock.patch.object(
+                download_directory,
+                "check_command_existence",
+                side_effect=lambda cmd: cmd in {"tar", "base64", "gzip"},
+            ), mock.patch.object(
+                download_directory,
+                "shell_exec_stream",
+                side_effect=fake_shell_exec_stream,
+            ):
+                cmd = download_directory.DownloadDirectory(
+                    "!download-dir", remote_path, destination
+                )
+                cmd.execute()
+
+            quoted_parent = shell_quote("/tmp")
+            quoted_name = shell_quote("remote dir's")
+            self.assertEqual(
+                commands,
+                [
+                    "tar -cf - -C %s %s | gzip -c | base64"
+                    % (quoted_parent, quoted_name)
+                ],
+            )
+            with open(
+                os.path.join(destination, "remote dir's", "file.txt"), "r"
+            ) as handle:
+                self.assertEqual(handle.read(), "hello")
+            with open(
+                os.path.join(destination, "remote dir's", "subdir", "nested.txt"), "r"
+            ) as handle:
+                self.assertEqual(handle.read(), "world")
+
+    def test_falls_back_to_plain_tar_when_gzip_is_unavailable(self):
+        remote_path = "/tmp/remote dir's"
+        archive_bytes = self._build_archive(
+            {
+                "remote dir's/file.txt": "hello",
+            },
+            mode="w:",
+        )
+
+        commands = []
+
+        def fake_shell_exec_stream(command, handler, timeout=300):
+            commands.append(command)
+            handler(download_directory.base64.b64encode(archive_bytes) + b"\n")
+            return 0
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            destination = os.path.join(tmpdir, "extract-here")
+
+            with mock.patch.object(
+                download_directory, "is_directory", return_value=True
+            ), mock.patch.object(
+                download_directory,
+                "check_command_existence",
+                side_effect=lambda cmd: cmd in {"tar", "base64"},
+            ), mock.patch.object(
+                download_directory,
+                "shell_exec_stream",
+                side_effect=fake_shell_exec_stream,
+            ):
+                cmd = download_directory.DownloadDirectory(
+                    "!download-dir", remote_path, destination
+                )
+                cmd.execute()
+
+            quoted_parent = shell_quote("/tmp")
+            quoted_name = shell_quote("remote dir's")
+            self.assertEqual(
+                commands,
+                ["tar -cf - -C %s %s | base64" % (quoted_parent, quoted_name)],
+            )
+            with open(
+                os.path.join(destination, "remote dir's", "file.txt"), "r"
+            ) as handle:
+                self.assertEqual(handle.read(), "hello")
+
+    def test_rejects_archive_path_traversal(self):
+        remote_path = "/tmp/remote-dir"
+        archive_bytes = self._build_archive({"../../escape.txt": "boom"})
+
+        def fake_shell_exec_stream(command, handler, timeout=300):
+            handler(download_directory.base64.b64encode(archive_bytes) + b"\n")
+            return 0
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            destination = os.path.join(tmpdir, "extract-here")
+            outside = os.path.join(tmpdir, "escape.txt")
+
+            with mock.patch.object(
+                download_directory, "is_directory", return_value=True
+            ), mock.patch.object(
+                download_directory,
+                "check_command_existence",
+                side_effect=lambda cmd: cmd in {"tar", "base64", "gzip"},
+            ), mock.patch.object(
+                download_directory,
+                "shell_exec_stream",
+                side_effect=fake_shell_exec_stream,
+            ):
+                cmd = download_directory.DownloadDirectory(
+                    "!download-dir", remote_path, destination
+                )
+                with self.assertRaises(RuntimeError):
+                    cmd.execute()
+
+            self.assertFalse(os.path.exists(outside))

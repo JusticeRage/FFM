@@ -100,3 +100,37 @@ class TestInputAPI(unittest.TestCase):
         self.assertEqual(read_all_output.call_count, 1)
         self.assertIn("start_marker", read_all_output.call_args.kwargs)
         self.assertIn("end_marker", read_all_output.call_args.kwargs)
+
+    def test_stream_output_yields_data_between_markers_and_returns_exit_code(self):
+        master = object()
+        session = types.SimpleNamespace(
+            master=master, input_driver=types.SimpleNamespace(last_line="PROMPT")
+        )
+        old_context = input_api.context
+        input_api.context = types.SimpleNamespace(active_session=session)
+        chunks = []
+
+        try:
+            with mock.patch.object(
+                input_api.select,
+                "select",
+                side_effect=[([master], [], []), ([master], [], [])],
+            ), mock.patch.object(
+                input_api.os,
+                "read",
+                side_effect=[
+                    b"noise\r\nSTARTMARKER\r\nhello ",
+                    b"world\r\nENDMARKER:0\r\nprompt",
+                ],
+            ):
+                status = input_api._stream_output(
+                    5,
+                    chunks.append,
+                    start_marker=b"STARTMARKER",
+                    end_marker=b"ENDMARKER",
+                )
+        finally:
+            input_api.context = old_context
+
+        self.assertEqual(status, 0)
+        self.assertEqual(b"".join(chunks), b"hello world")

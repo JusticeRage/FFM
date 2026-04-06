@@ -130,6 +130,10 @@ locally through the terminal. This command is a little more complex because more
 error checking is required but it's another command you can easily read to get started. It lives
 in `commands/download_file.py`. Note that it requires `xxd` or `od` on the remote machine to
 function properly.
+* `!download-dir [remote directory] [local destination]` streams a tar archive of a remote
+directory through the terminal and extracts it locally without touching the remote filesystem.
+It lives in `commands/download_directory.py`. It requires `tar` and `base64` on the remote
+machine, and uses `gzip` as well when available.
 * `!upload [local file] [remote path]` works exactly the same as the previous command,
 except that a local file is put on the remote machine. It lives in `commands/upload_file.py`.
 
@@ -207,7 +211,6 @@ FFM. Feel free to open issues not only for bugs, but also if you're trying to do
 and can't figure out how; this way I'll be able to improve the documentation for everyone.
 
 ### To Do
-- Directory download module
 - Single file encryption module
 
 ### Contact

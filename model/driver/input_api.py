@@ -236,6 +236,65 @@ def _read_all_output(timeout, start_marker=None, end_marker=None):
 # -----------------------------------------------------------------------------
 
 
+def _stream_output(timeout, output_handler, start_marker, end_marker):
+    """
+    Streams a command's output from the current terminal to a callback until the
+    explicit end marker is found.
+    :param timeout: The maximum amount of time to wait.
+    :param output_handler: Callback receiving bytes that belong to the command output.
+    :param start_marker: Marker emitted immediately before the command output.
+    :param end_marker: Marker emitted after the command output with the exit status.
+    :return: The command's exit code.
+    """
+    output = b""
+    started = False
+    deadline = time.monotonic() + timeout
+    start_pattern = re.compile(rb"(?:^|\r?\n)" + re.escape(start_marker) + rb"\r?\n")
+    end_pattern = re.compile(
+        rb"(?:^|\r?\n)" + re.escape(end_marker) + rb":(\d+)(?:\r?\n|$)"
+    )
+    retain = len(end_marker) + 64
+
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            write_str(
+                "Timeout reached; giving up on trying to capture the output.\r\n",
+                LogLevel.ERROR,
+            )
+            raise RuntimeError("Timed out while streaming command output.")
+        r, _, _ = select.select([context.active_session.master], [], [], remaining)
+        if context.active_session.master not in r:
+            write_str(
+                "Timeout reached; giving up on trying to capture the output.\r\n",
+                LogLevel.ERROR,
+            )
+            raise RuntimeError("Timed out while streaming command output.")
+
+        output += os.read(context.active_session.master, 4096)
+
+        if not started:
+            start_match = start_pattern.search(output)
+            if not start_match:
+                continue
+            output = output[start_match.end() :]
+            started = True
+
+        end_match = end_pattern.search(output)
+        if end_match:
+            payload = output[: end_match.start()]
+            if payload:
+                output_handler(payload)
+            return int(end_match.group(1))
+
+        if len(output) > retain:
+            output_handler(output[:-retain])
+            output = output[-retain:]
+
+
+# -----------------------------------------------------------------------------
+
+
 def pass_command(command):
     """
     Simply passes a command to the underlying shell. The output is completely
@@ -272,6 +331,23 @@ def shell_exec(command, print_output=False, output_cleaner=None, timeout=300):
     if print_output and output:
         write_str(output + "\r\n")
     return output
+
+
+# -----------------------------------------------------------------------------
+
+
+def shell_exec_stream(command, output_handler, timeout=300):
+    """
+    Executes a command in the shell and streams its output to a callback.
+    :param command: The command to run.
+    :param output_handler: Callback receiving byte chunks from stdout/stderr.
+    :param timeout: The maximum time to wait for the command to finish.
+    :return: The command's exit code.
+    """
+    start_marker = _new_marker()
+    end_marker = _new_marker()
+    pass_command(_build_exec_command(command, start_marker, end_marker))
+    return _stream_output(timeout, output_handler, start_marker, end_marker)
 
 
 # -----------------------------------------------------------------------------
